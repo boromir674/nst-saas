@@ -44,28 +44,8 @@ If streaming is not possible or for a quicker PoC we should just "send" the imag
 
 
 ```mermaid
-
-flowchart TB
-
-    C["Web UI"]
-    C --Run Algorithm --> F["NST Handler (AWS Lambda/Step Function)"]
-    F --> G{"NST Budget Available?"}
-    
-    G -- Yes --> H["Upload Images to S3 (Content and Style Images)"]
-    H --> I["Trigger Web API for NST Algo"]
-    I --> J["Web API (FastAPI, Fargate/App Runner)"]
-    J --> K["CPU-bound NST Algorithm (Fargate Worker)"]
-    K --> D["UI Update: Stream Algo Progress"]
-    K --> D["UI Update: Stream Final Image"]
-
-    G -- No --> D["UI Update: Budget Depleted"]
-
-
-```
-
-```mermaid
 sequenceDiagram
-    participant User
+    actor User
     participant WebUI as Web UI (Client)
     participant APIGateway as API Gateway
     participant StepFunction as Step Function (Budget + URL Gen)
