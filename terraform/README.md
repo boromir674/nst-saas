@@ -56,26 +56,37 @@ terraform init
 > Now backend (aka state) should be initialized, along with `modules` and provider plugins
 
 ### Step 2: Plan Infrastructure Changes
-Run terraform plan to preview the changes Terraform will make to your infrastructure. Specify an environment by using the appropriate terraform.tfvars file from the environments/ directory.
+> To preview the changes Terraform will make to your infrastructure run `terraform plan`.
 
-For example, to plan changes for the dev environment:
+Specify a preset `environment` by using the corresponding `*.tfvars` file.
+
+For example, to plan changes for the `dev` environment and record plan:
 
 ```
 terraform plan --var-file env_dev.tfvars -out tfplan-dev
 ```
 
-### Step 3: Apply Configuration
-To deploy the infrastructure for a specific environment, use terraform apply with the environment’s terraform.tfvars file.
+### Step 3: Deploy/Apply Configuration
+> To deploy the infrastructure run `terraform apply` with the plan compiled previously.
 
 ```
 terraform apply tfplan-dev
 ```
 
-Terraform will prompt you to confirm before making any changes. After confirmation, it will provision the resources and display output values, such as S3 bucket URLs and API Gateway URLs.
+Terraform **will prompt** you to confirm before making any changes.  
+
+After **successfully provisioning** the resources **Output Values** from `outputs.tf` will be **displayed**, such as:
+- S3 bucket URLs
+- API Gateway URLs
+
+#### Verify Resources
+
+- To see all AWS S3 Buckets: `aws s3 ls`
+- To see all AWS Lambda Functions: `aws lambda list-functions`
 
 ### Step 4: Destroy Infrastructure (Tear Down)
-To remove all resources for a specific environment, use terraform destroy with the -var-file flag for the target environment.
+> To remove all resources deployed, run `terraform destroy`.
 
 ```sh
-terraform destroy --var-file env_dev.tfvars
+terraform destroy
 ```

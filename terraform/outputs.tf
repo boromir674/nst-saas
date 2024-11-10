@@ -21,6 +21,15 @@ output "bucket_url" {
 #   value       = module.budget_check_lambda.lambda_arn  # Gets the ARN from the Lambda module
 # }
 
+
+# Resource: URL Provider Lambda: Output the ARN (Amazon Resource Name)
+output "presigned_url_lambda_arn" {
+  description = "ARN of the presigned URL Lambda function"
+  value       = module.presigned_url_lambda.lambda_arn
+}
+
+
+
 # Output the URL of the API Gateway for invoking endpoints
 # output "api_gateway_url" {
 #   description = "The base URL of the API Gateway for budget check"

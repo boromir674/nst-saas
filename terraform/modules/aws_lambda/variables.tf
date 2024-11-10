@@ -1,0 +1,57 @@
+# modules/lambda/variables.tf
+
+variable "function_name" {
+  description = "The name of the Lambda function"
+  type        = string
+}
+
+variable "handler" {
+  description = "Lambda handler (entry point)"
+  type        = string
+  default     = "generate_presigned_url.handler"  # Function entry point in Python file
+}
+
+variable "runtime" {
+  description = "Runtime environment for the Lambda function"
+  type        = string
+  default     = "python3.8"
+}
+
+variable "role_arn" {
+  description = "IAM role ARN that Lambda assumes"
+  type        = string
+}
+
+variable "bucket_name" {
+  description = "Name of the S3 bucket to generate pre-signed URLs for"
+  type        = string
+}
+
+variable "url_expiration" {
+  description = "Expiration time for the pre-signed URL in seconds"
+  type        = number
+  default     = 3600  # Default to 1 hour
+}
+
+variable "lambda_package_path" {
+  description = "Path to the Lambda deployment package (ZIP file)"
+  type        = string
+}
+
+variable "timeout" {
+  description = "Lambda function timeout in seconds"
+  type        = number
+  default     = 10  # Adjust as needed
+}
+
+variable "environment_vars" {
+  description = "Environment variables for the Lambda function"
+  type        = map(string)
+  default     = {}
+}
+
+variable "tags" {
+  description = "Tags for the Lambda function"
+  type        = map(string)
+  default     = {}
+}

@@ -24,6 +24,26 @@ module "s3_bucket" {
 #   environment_vars = var.environment_vars             # Environment-specific variables map
 # }
 
+
+# Module for Lambda function to generate pre-signed URLs for S3 uploads
+module "presigned_url_lambda" {
+  source           = "./modules/aws_lambda"
+  function_name    = var.presigned_url_lambda_function_name
+  handler          = var.presigned_url_lambda_handler
+  runtime          = var.presigned_url_lambda_runtime
+  role_arn         = var.presigned_url_lambda_role_arn
+  bucket_name      = var.bucket_name
+  url_expiration   = var.presigned_url_url_expiration
+  lambda_package_path = var.presigned_url_lambda_package_path
+  environment_vars = var.environment_vars
+  tags = {
+    Environment = var.environment,
+    IaaC        = "Terraform",
+    App         = "NST"
+  }
+}
+
+
 # Module for API Gateway to expose endpoints
 # This API Gateway integrates with the Lambda function for budget checking.
 # module "api_gateway" {

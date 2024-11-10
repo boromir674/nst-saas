@@ -8,9 +8,17 @@
   - Able to check if `nst budget` is depleted or not
   - nst budget is a certain quota in AWS to prevent charges from increasing too much
   - assumption is that both AWS Fargate and AWS App Runner provide this functionality
+- **URL Provider**, a Lambda function to generate `Pre-signed URLs with Access Permissions`
+  - generates `Pre-signed URLs with Access Permissions` on invocation
+  - Infrastructure as Code for `AWS Lambda`: see [terraform/modules/aws_lambda](./terraform/modules/aws_lambda/) and [terraform/main.tf](./terraform/main.tf)
+  - [Lambda Function](./lambda_url_provider/) deployed as `ZIP` to minimize cost (no deployment as `Container`, since no OS modifications or complex dependencies are required)
 - **Web API**, written with `Python` and `FastAPI`, deployed in AWS Fargate or AWS App Runner
   - **REST** or **RPC**
   - Runs CPU-bound NST algorithm
+- **Image Cloud Storage** for Client File Uploads
+  - Infrastructure as Code for `AWS S3 Bucket` in [terraform/modules/s3_bucket](./terraform/modules/s3_bucket/)
+
+> Manage Infra via [terraform/main.tf](./terraform/main.tf)
 
 ## Actors
 
@@ -46,51 +54,51 @@ If streaming is not possible or for a quicker PoC we should just "send" the imag
 ```mermaid
 sequenceDiagram
     actor User
-    participant WebUI as Web UI (Client)
+    participant WebUI as Web Client
     participant APIGateway as API Gateway
     participant StepFunction as Step Function (Budget + URL Gen)
     participant BudgetCheckLambda as Budget Check Lambda
-    participant URLGenLambda as Generate Pre-signed URL Lambda
+    participant URLGenLambda as URL Generator Lambda
     participant S3 as Amazon S3
     participant WebAPI as Web API (FastAPI on Fargate)
-    participant NSTWorker as NST Worker (CPU-bound Task on Fargate)
+    participant NSTWorker as NST Worker
 
-    User->>WebUI: 1. Access nst-art.org
-    WebUI->>S3: 2. Load Static Assets (HTML/CSS/JS)
-    WebUI->>User: 3. Render Web UI
-    User->>WebUI: 4. Load Content & Style Images
-    WebUI->>APIGateway: 5. Request Budget Check (via Step Function)
+    User->>WebUI: Access nst-art.org
 
-    APIGateway->>StepFunction: 6. Start Step Function Workflow
-    StepFunction->>BudgetCheckLambda: 7. Invoke Budget Check Lambda
-    BudgetCheckLambda->>BudgetCheckLambda: 8. Verify Budget in DynamoDB
+    WebUI->>User: Render Web UI
+    User->>WebUI: Load Content & Style Images
+    WebUI->>APIGateway: Request Budget Check (via Step Function)
+
+    APIGateway->>StepFunction: Start Step Function Workflow
+    StepFunction->>BudgetCheckLambda: Invoke Budget Check Lambda
+    BudgetCheckLambda->>BudgetCheckLambda: Verify Budget in DynamoDB
     alt Budget Available
-        BudgetCheckLambda->>StepFunction: 9. Budget Approved
-        StepFunction->>URLGenLambda: 10. Invoke Pre-signed URL Lambda
-        URLGenLambda->>S3: 11. Create Pre-signed URL with Access Permissions
-        S3->>URLGenLambda: 12. Return Pre-signed URL
-        URLGenLambda->>StepFunction: 13. Send Pre-signed URL to Step Function
-        StepFunction->>WebUI: 14. Return Pre-signed URL to Client
+        BudgetCheckLambda->>StepFunction: Budget Approved
+        StepFunction->>URLGenLambda: Invoke Pre-signed URL Lambda
+        URLGenLambda->>S3: Request Pre-signed URL 
+        S3->>URLGenLambda: URL with Access Permissions
+        URLGenLambda->>StepFunction: Send Pre-signed URL to Step Function
+        StepFunction->>WebUI: Return Pre-signed URL to Client
 
-        WebUI->>S3: 15. Upload Images Directly to S3 (via Pre-signed URL)
-        S3->>WebUI: 16. Confirm Image Upload
+        WebUI->>S3: Upload Images Directly to S3 (via Pre-signed URL)
+        S3->>WebUI: Confirm Image Upload
 
-        WebUI->>APIGateway: 17. Trigger NST Algo (via /run-nst)
-        APIGateway->>WebAPI: 18. Start NST Algorithm with S3 URLs
-        WebAPI->>NSTWorker: 19. Process NST Algorithm in Worker
+        WebUI->>APIGateway: Trigger NST Algo (via /run-nst)
+        APIGateway->>WebAPI: Start NST Algorithm with S3 URLs
+        WebAPI->>NSTWorker: Process NST Algorithm in Worker
 
         loop Stream NST Progress
-            NSTWorker->>WebAPI: 20. Stream Progress Updates
-            WebAPI->>WebUI: 21. Send NST Progress to Client
-            WebUI->>User: 22. Update Progress in UI
+            NSTWorker->>WebAPI: Stream Progress Updates
+            WebAPI->>WebUI: Send NST Progress to Client
+            WebUI->>User: Update Progress in UI
         end
 
-        NSTWorker->>WebAPI: 23. Complete NST Processing (Final Image)
-        WebAPI->>WebUI: 24. Send Final Image
-        WebUI->>User: 25. Display Styled Image
+        NSTWorker->>WebAPI: Complete NST Processing (Final Image)
+        WebAPI->>WebUI: Send Final Image
+        WebUI->>User: Display Styled Image
     else Budget Depleted
-        BudgetCheckLambda->>StepFunction: 9. Notify Budget Depletion
-        StepFunction->>WebUI: 10. Return "No Budget" Message
-        WebUI->>User: 11. Show "No Budget" Notification
+        BudgetCheckLambda->>StepFunction: Notify Budget Depletion
+        StepFunction->>WebUI: Return "No Budget" Message
+        WebUI->>User: Show "No Budget" Notification
     end
 ```
