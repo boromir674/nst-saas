@@ -5,16 +5,16 @@ from botocore.exceptions import ClientError
 
 def handler(event, context):
     # Check if queryStringParameters or object_name is missing
-    if 'queryStringParameters' not in event or 'object_name' not in event['queryStringParameters']:
+    if event is None or 'queryStringParameters' not in event or 'object_name' not in event['queryStringParameters']:
         return {
             'statusCode': 400,
             'body': json.dumps({'error': 'Missing required query parameter: object_name'})
         }
 
-    s3_client = boto3.client('s3')
+    s3_client = boto3.client('s3', region_name='eu-central-1')
     # assuming we know what S3 bucket we want to use
     bucket_name = os.environ['BUCKET_NAME']
-    # assuming we know we are provided with the object name
+    # assuming client requested url with query parameters ?object_name=blahblah
     object_name = event['queryStringParameters'].get('object_name')
     expiration = int(os.environ.get('URL_EXPIRATION', 3600))  # Default to 1 hour
 
