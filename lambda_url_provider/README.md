@@ -5,6 +5,67 @@
 This AWS Lambda Function requires minimum dependencies, no complex OS configuration and does not require more than 250MB.  
 Thus we deploy as `ZIP`. See https://docs.aws.amazon.com/lambda/latest/dg/python-package.html
 
+```mermaid
+sequenceDiagram
+    actor User
+    participant ReactClient as React Client
+    participant APIGateway as API Gateway
+    participant StepFunction as Step Function Workflow
+    participant BudgetCheckLambda as Lambda: Budget Check
+    participant URLGenerationLambda as Lambda: Gen Pre-signed URL
+    participant S3 as S3 Bucket
+
+    User ->> ReactClient: Selects a file and clicks 'Upload'
+    ReactClient ->> APIGateway: Request pre-signed URL
+    APIGateway ->> StepFunction: Start Step Function Workflow
+
+    StepFunction ->> BudgetCheckLambda: Invoke Budget Check Lambda
+    BudgetCheckLambda -->> StepFunction: Return budget check result
+
+    StepFunction ->> StepFunction: Check budget result
+    alt Sufficient Budget
+        StepFunction ->> URLGenerationLambda: Invoke URL Generation Lambda
+        URLGenerationLambda ->> S3: Generate pre-signed URL for upload
+        S3 -->> URLGenerationLambda: Return pre-signed URL
+        URLGenerationLambda -->> StepFunction: Return pre-signed URL
+        StepFunction -->> APIGateway: Send pre-signed URL to API Gateway
+    else Insufficient Budget
+        StepFunction -->> APIGateway: Notify insufficient budget
+    end
+
+    APIGateway -->> ReactClient: Return pre-signed URL (or error)
+    alt Pre-signed URL received
+        ReactClient ->> S3: Upload file using pre-signed URL
+        S3 -->> ReactClient: Confirm upload completion
+    end
+
+    ReactClient -->> User: Display success or error message
+
+
+```
+
+```mermaid
+sequenceDiagram
+    actor User
+    participant ReactClient as React Client
+    participant APIGateway as API Gateway
+    participant Lambda as Lambda: Generate Pre-signed URL
+    participant S3 as S3 Bucket
+
+    User ->> ReactClient: Selects a file and clicks 'Upload'
+    ReactClient ->> APIGateway: Request pre-signed URL
+    APIGateway ->> Lambda: Invoke Lambda function to generate URL
+    Lambda ->> S3: Generate pre-signed URL for upload
+    S3 -->> Lambda: Return pre-signed URL
+    Lambda -->> APIGateway: Return pre-signed URL
+    APIGateway -->> ReactClient: Return pre-signed URL
+    ReactClient ->> S3: Upload file using pre-signed URL
+    S3 -->> ReactClient: Confirm upload completion
+
+    ReactClient -->> User: Display success or error message
+
+```
+
 ## Build Process
 
 > In the context of a ZIP Lambda Deployment building means preparing the ZIP to be Lambda-compatible
@@ -47,22 +108,3 @@ cd ../
     cd ../../../../
     zip my_deployment_package.zip lambda_function.py
     ```
-
-```mermaid
-
-flowchart TB
-
-    START(("`o`"))
-
-    ROOT["`o`"]
-
-    MKDIR["`o`"]
-
-    INS["`o`"]
-
-    DIR["`o`"]
-
-    ZIP["`o`"]
-
-    START --> B
-```
