@@ -1,5 +1,27 @@
-\.terraform
+\.terraform/
 .terraform.lock.hcl
 terraform.tfstate
 terraform.tfstate.backup
+terraform/tfplan-dev
 
+package\.json
+package-lock\.json
+node_modules/
+
+.idea/
+.vscode/
+
+# Python
+*.egg-info/
+*.pyc
+*\.bak
+\.fuse*
+.coverage
+*__pycache__
+.tox/
+
+docs/_build/
+dist/
+build/
+htmlcov/
+.DS_Store
