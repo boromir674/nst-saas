@@ -1,8 +1,8 @@
 # terraform/main.tf
 
 
-# Module for S3 bucket to store NST images
-# This module creates an S3 bucket, parameterized with a name specific to the environment.
+### Create 'NST Storage' the S3 bucket to store NST images ###
+# 2 Resources of type 'S3 Bucket' and 'Bucket Versioning'
 module "s3_bucket" {
   source      = "./modules/s3_bucket"  # Path to the reusable S3 bucket module
   bucket_name = var.bucket_name        # Bucket name passed in as a variable
@@ -15,32 +15,24 @@ module "s3_bucket" {
   }
 }
 
-# Import IAM module for Lambda permissions and PassRole
+### Create Role that allows a Lambda to access the above 'S3 Storage' ###
+# 3 Resources of type 'IAM Role', 'IAM Policy' and 'Role Policy Attachment'
 module "iam" {
   source = "./modules/iam"
   bucket_name = module.s3_bucket.bucket_name
-  terraform_execution_role = var.terraform_execution_role
+  # terraform_execution_role = var.terraform_execution_role
 }
 
-# Module for the Lambda function responsible for budget checking
-# This Lambda checks if the NST budget allows a new processing job.
-# module "budget_check_lambda" {
-#   source           = "./modules/lambda"               # Path to the reusable Lambda module
-#   function_name    = var.lambda_function_name         # Unique Lambda name per environment
-#   handler          = var.lambda_handler               # Lambda handler (entry point)
-#   runtime          = var.lambda_runtime               # Lambda runtime (e.g., python3.8)
-#   environment_vars = var.environment_vars             # Environment-specific variables map
-# }
-
-
-# Module for Lambda function to generate pre-signed URLs for S3 uploads
+### Create 'URL Provider' Lambda with above Role to generate pre-signed URLs ###
+# 1 Resource of type 'Lambda Function'
 module "presigned_url_lambda" {
   source           = "./modules/aws_lambda"
   function_name    = var.presigned_url_lambda_function_name
   handler          = var.presigned_url_lambda_handler
   runtime          = var.presigned_url_lambda_runtime
   # role_arn         = var.presigned_url_lambda_role_arn
-  role_arn         = module.iam.lambda_execution_role_arn  # Use IAM module's role ARN output
+  # Specify Role by arn using Output of above 'Role'
+  role_arn         = module.iam.lambda_execution_role_arn
   # S3 Bucket to generate URLs for access
   bucket_name      = var.bucket_name
 
@@ -53,6 +45,17 @@ module "presigned_url_lambda" {
     App         = "NST"
   }
 }
+
+
+# Module for the Lambda function responsible for budget checking
+# This Lambda checks if the NST budget allows a new processing job.
+# module "budget_check_lambda" {
+#   source           = "./modules/lambda"               # Path to the reusable Lambda module
+#   function_name    = var.lambda_function_name         # Unique Lambda name per environment
+#   handler          = var.lambda_handler               # Lambda handler (entry point)
+#   runtime          = var.lambda_runtime               # Lambda runtime (e.g., python3.8)
+#   environment_vars = var.environment_vars             # Environment-specific variables map
+# }
 
 
 # Module for API Gateway to expose endpoints
