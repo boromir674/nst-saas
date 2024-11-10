@@ -1,5 +1,6 @@
 # terraform/main.tf
 
+
 # Module for S3 bucket to store NST images
 # This module creates an S3 bucket, parameterized with a name specific to the environment.
 module "s3_bucket" {
@@ -8,10 +9,17 @@ module "s3_bucket" {
   enable_public_read = false           # Set to true to enable public read access
   enable_versioning  = false            # Enable versioning for object backups
   tags = {                             # Tags to apply to the bucket
-    Environment = var.environment,
+    Environment = var.environment_name,
     IaaC        = "Terraform",
     App         = "NST"
   }
+}
+
+# Import IAM module for Lambda permissions and PassRole
+module "iam" {
+  source = "./modules/iam"
+  bucket_name = module.s3_bucket.bucket_name
+  terraform_execution_role = var.terraform_execution_role
 }
 
 # Module for the Lambda function responsible for budget checking
@@ -31,13 +39,16 @@ module "presigned_url_lambda" {
   function_name    = var.presigned_url_lambda_function_name
   handler          = var.presigned_url_lambda_handler
   runtime          = var.presigned_url_lambda_runtime
-  role_arn         = var.presigned_url_lambda_role_arn
+  # role_arn         = var.presigned_url_lambda_role_arn
+  role_arn         = module.iam.lambda_execution_role_arn  # Use IAM module's role ARN output
+  # S3 Bucket to generate URLs for access
   bucket_name      = var.bucket_name
+
   url_expiration   = var.presigned_url_url_expiration
   lambda_package_path = var.presigned_url_lambda_package_path
   environment_vars = var.environment_vars
   tags = {
-    Environment = var.environment,
+    Environment = var.environment_name,
     IaaC        = "Terraform",
     App         = "NST"
   }
