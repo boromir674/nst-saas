@@ -46,4 +46,4 @@ jobs:
     if: always() && ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == 'true' || ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == '' && needs.pipe.result == 'success' ) )
     uses: ./.github/workflows/sanity-checks.yml
     with:
-      env_var_file: 'terraform/env_dev.tfvars'
+      env_var_file: 'env_dev.tfvars'  # relative to ./terraform directory
