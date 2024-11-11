@@ -12,7 +12,7 @@
 variable "aws_region" {
   description = "The AWS region for resources"
   type        = string
-  default     = "eu-central-1"  # Replace with your preferred region, if necessary
+  default     = "eu-central-1" # Replace with your preferred region, if necessary
 }
 
 #### Resource: S3 bucket for storing NST images ####
@@ -34,7 +34,7 @@ variable "lambda_function_name" {
 variable "lambda_handler" {
   description = "Lambda function handler (entry point)"
   type        = string
-  default     = "app.handler"  # Replace with the actual handler if different
+  default     = "app.handler" # Replace with the actual handler if different
 }
 
 # Lambda runtime (e.g., Python 3.8, Node.js 14.x)
@@ -48,7 +48,7 @@ variable "lambda_runtime" {
 variable "environment_vars" {
   description = "A map of environment variables for the Lambda function"
   type        = map(string)
-  default     = {}  # Default to an empty map; define specific values in `terraform.tfvars`
+  default     = {} # Default to an empty map; define specific values in `terraform.tfvars`
 }
 
 
@@ -86,7 +86,7 @@ variable "presigned_url_lambda_package_path" {
 variable "presigned_url_lambda_tags" {
   description = "Tags to apply to the presigned URL Lambda function"
   type        = map(string)
-  default     = {}  # Default to an empty map; define specific values in `terraform.tfvars`
+  default     = {} # Default to an empty map; define specific values in `terraform.tfvars`
 }
 
 #### Resource: API Gateway ####
@@ -100,5 +100,5 @@ variable "api_name" {
 variable "environment_name" {
   description = "The environment name/tag for resources"
   type        = string
-  default     = "dev"  # Default to 'dev' environment
+  default     = "dev" # Default to 'dev' environment
 }

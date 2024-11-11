@@ -6,7 +6,7 @@
 # Output the name of the S3 bucket created for storing NST images.
 output "bucket_name" {
   description = "The name of the S3 bucket for storing NST images"
-  value       = module.s3_bucket.bucket_name  # Pulls the bucket name from the S3 bucket module
+  value       = module.s3_bucket.bucket_name # Pulls the bucket name from the S3 bucket module
 }
 
 # Output the URL of the S3 bucket for quick access (useful for testing or debugging)

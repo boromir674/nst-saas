@@ -4,11 +4,11 @@
 ### Create 'NST Storage' the S3 bucket to store NST images ###
 # 2 Resources of type 'S3 Bucket' and 'Bucket Versioning'
 module "s3_bucket" {
-  source      = "./modules/s3_bucket"  # Path to the reusable S3 bucket module
-  bucket_name = var.bucket_name        # Bucket name passed in as a variable
-  enable_public_read = false           # Set to true to enable public read access
-  enable_versioning  = false            # Enable versioning for object backups
-  tags = {                             # Tags to apply to the bucket
+  source             = "./modules/s3_bucket" # Path to the reusable S3 bucket module
+  bucket_name        = var.bucket_name       # Bucket name passed in as a variable
+  enable_public_read = false                 # Set to true to enable public read access
+  enable_versioning  = false                 # Enable versioning for object backups
+  tags = {                                   # Tags to apply to the bucket
     Environment = var.environment_name,
     IaaC        = "Terraform",
     App         = "NST"
