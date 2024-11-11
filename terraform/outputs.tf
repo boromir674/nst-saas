@@ -23,10 +23,10 @@ output "bucket_url" {
 
 
 # Resource: URL Provider Lambda: Output the ARN (Amazon Resource Name)
-output "presigned_url_lambda_arn" {
-  description = "ARN of the presigned URL Lambda function"
-  value       = module.presigned_url_lambda.lambda_arn
-}
+# output "presigned_url_lambda_arn" {
+#   description = "ARN of the presigned URL Lambda function"
+#   value       = module.presigned_url_lambda.lambda_arn
+# }
 
 
 
@@ -39,7 +39,7 @@ output "presigned_url_lambda_arn" {
 
 ### Output of API Gateway related resources
 
-output "api_invoke_url" {
-  description = "Base URL for API Gateway"
-  value       = aws_api_gateway_deployment.api_deployment.invoke_url
-}
+# output "api_invoke_url" {
+#   description = "Base URL for API Gateway"
+#   value       = aws_api_gateway_deployment.api_deployment.invoke_url
+# }
