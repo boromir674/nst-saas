@@ -44,12 +44,28 @@ terraform/
     aws configure
     ```
 
+## Cheatsheet
+```sh
+cd terraform/
+terraform init
+```
+```sh
+terraform plan --var-file env_dev.tfvars --var-file .env.tfvars -out tfplan-dev
+```
+```sh
+terraform apply tfplan-dev
+```
+- To see all AWS S3 Buckets: `aws s3 ls`
+- To see all AWS Lambda Functions: `aws lambda list-functions`
+```sh
+terraform destroy --var-file env_dev.tfvars --var-file .env.tfvars
+```
 ## Setup Instructions
 
 ### Step 1: Initialize Terraform
 Navigate to the terraform/ directory and run terraform init to initialize the project.
 
-```bash
+```sh
 cd terraform/
 terraform init
 ```
@@ -62,14 +78,14 @@ Specify a preset `environment` by using the corresponding `*.tfvars` file.
 
 For example, to plan changes for the `dev` environment and record plan:
 
-```
-terraform plan --var-file env_dev.tfvars -out tfplan-dev
+```sh
+terraform plan --var-file env_dev.tfvars --var-file .env.tfvars -out tfplan-dev
 ```
 
 ### Step 3: Deploy/Apply Configuration
 > To deploy the infrastructure run `terraform apply` with the plan compiled previously.
 
-```
+```sh
 terraform apply tfplan-dev
 ```
 
@@ -88,5 +104,5 @@ After **successfully provisioning** the resources **Output Values** from `output
 > To remove all resources deployed, run `terraform destroy`.
 
 ```sh
-terraform destroy
+terraform destroy --var-file env_dev.tfvars --var-file .env.tfvars
 ```

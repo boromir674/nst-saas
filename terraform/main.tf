@@ -1,8 +1,8 @@
 # terraform/main.tf
 
 
-# Module for S3 bucket to store NST images
-# This module creates an S3 bucket, parameterized with a name specific to the environment.
+### Create 'NST Storage' the S3 bucket to store NST images ###
+# 2 Resources of type 'S3 Bucket' and 'Bucket Versioning'
 module "s3_bucket" {
   source      = "./modules/s3_bucket"  # Path to the reusable S3 bucket module
   bucket_name = var.bucket_name        # Bucket name passed in as a variable
@@ -15,32 +15,24 @@ module "s3_bucket" {
   }
 }
 
-# Import IAM module for Lambda permissions and PassRole
+### Create Role that allows a Lambda to access the above 'S3 Storage' ###
+# 3 Resources of type 'IAM Role', 'IAM Policy' and 'Role Policy Attachment'
 module "iam" {
   source = "./modules/iam"
   bucket_name = module.s3_bucket.bucket_name
-  terraform_execution_role = var.terraform_execution_role
+  # terraform_execution_role = var.terraform_execution_role
 }
 
-# Module for the Lambda function responsible for budget checking
-# This Lambda checks if the NST budget allows a new processing job.
-# module "budget_check_lambda" {
-#   source           = "./modules/lambda"               # Path to the reusable Lambda module
-#   function_name    = var.lambda_function_name         # Unique Lambda name per environment
-#   handler          = var.lambda_handler               # Lambda handler (entry point)
-#   runtime          = var.lambda_runtime               # Lambda runtime (e.g., python3.8)
-#   environment_vars = var.environment_vars             # Environment-specific variables map
-# }
-
-
-# Module for Lambda function to generate pre-signed URLs for S3 uploads
+### Create 'URL Provider' Lambda with above Role to generate pre-signed URLs ###
+# 1 Resource of type 'Lambda Function'
 module "presigned_url_lambda" {
   source           = "./modules/aws_lambda"
   function_name    = var.presigned_url_lambda_function_name
   handler          = var.presigned_url_lambda_handler
   runtime          = var.presigned_url_lambda_runtime
   # role_arn         = var.presigned_url_lambda_role_arn
-  role_arn         = module.iam.lambda_execution_role_arn  # Use IAM module's role ARN output
+  # Specify Role by arn using Output of above 'Role'
+  role_arn         = module.iam.lambda_execution_role_arn
   # S3 Bucket to generate URLs for access
   bucket_name      = var.bucket_name
 
@@ -55,6 +47,17 @@ module "presigned_url_lambda" {
 }
 
 
+# Module for the Lambda function responsible for budget checking
+# This Lambda checks if the NST budget allows a new processing job.
+# module "budget_check_lambda" {
+#   source           = "./modules/lambda"               # Path to the reusable Lambda module
+#   function_name    = var.lambda_function_name         # Unique Lambda name per environment
+#   handler          = var.lambda_handler               # Lambda handler (entry point)
+#   runtime          = var.lambda_runtime               # Lambda runtime (e.g., python3.8)
+#   environment_vars = var.environment_vars             # Environment-specific variables map
+# }
+
+
 # Module for API Gateway to expose endpoints
 # This API Gateway integrates with the Lambda function for budget checking.
 # module "api_gateway" {
@@ -62,3 +65,85 @@ module "presigned_url_lambda" {
 #   api_name    = var.api_name                           # API name per environment
 #   lambda_arns = [module.budget_check_lambda.lambda_arn]  # Links the budget check Lambda
 # }
+
+### Create an AWS API Gateway to expose the URL generation Lambda ###
+# Resource: API Gateway to expose the URL generation Lambda
+resource "aws_api_gateway_rest_api" "url_provider_api" {
+  name        = "URLProviderAPI"
+  description = "API to generate pre-signed URLs for S3 uploads"
+}
+
+# Define an HTTP endpoint (aka resource path, url path) in the API Gateway
+resource "aws_api_gateway_resource" "url_resource" {
+  rest_api_id = aws_api_gateway_rest_api.url_provider_api.id
+  parent_id   = aws_api_gateway_rest_api.url_provider_api.root_resource_id
+  path_part   = "get-presigned-url"
+}
+
+# # Define a POST method for API Gateway
+# resource "aws_api_gateway_method" "post_presigned_url" {
+#   rest_api_id   = aws_api_gateway_rest_api.url_provider_api.id
+#   resource_id   = aws_api_gateway_resource.url_resource.id
+#   http_method   = "POST"                     # Change to POST
+#   authorization = "NONE"                      # No auth for quick testing
+
+#   # Specify that the request will have a JSON payload
+#   request_parameters = {
+#     "method.request.header.Content-Type" = true
+#   }
+# }
+
+# Enable the GET method for above Endpoint
+resource "aws_api_gateway_method" "get_presigned_url" {
+  rest_api_id   = aws_api_gateway_rest_api.url_provider_api.id
+  resource_id   = aws_api_gateway_resource.url_resource.id
+  http_method   = "GET"
+  authorization = "NONE"  # No auth for quick testing; replace with proper auth later
+}
+
+# # Integrate API Gateway with Lambda function for POST method
+# resource "aws_api_gateway_integration" "lambda_integration" {
+#   rest_api_id             = aws_api_gateway_rest_api.url_provider_api.id
+#   resource_id             = aws_api_gateway_resource.url_resource.id
+#   http_method             = aws_api_gateway_method.post_presigned_url.http_method
+#   integration_http_method = "POST"             # POST to match Lambda’s POST handler
+#   type                    = "AWS_PROXY"        # AWS_PROXY to handle Lambda responses directly
+#   uri                     = aws_lambda_function.presigned_url_lambda.invoke_arn
+
+#   request_templates = {
+#     "application/json" = <<EOF
+#       #if($input.json('$') != '')
+#         $input.json('$')
+#       #else
+#         {}
+#       #end
+#     EOF
+#   }
+# }
+
+# Integrate API Gateway with the Lambda function
+resource "aws_api_gateway_integration" "lambda_integration" {
+  rest_api_id             = aws_api_gateway_rest_api.url_provider_api.id
+  resource_id             = aws_api_gateway_resource.url_resource.id
+  http_method             = aws_api_gateway_method.get_presigned_url.http_method
+  integration_http_method = "POST"
+  type                    = "AWS_PROXY"
+  uri                     = module.presigned_url_lambda.lambda_invoke_arn
+}
+
+# Grant API Gateway permission to invoke the URL Provider Lambda
+resource "aws_lambda_permission" "api_gateway_invoke" {
+  statement_id  = "AllowAPIGatewayInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = module.presigned_url_lambda.lambda_name
+  principal     = "apigateway.amazonaws.com"
+  source_arn    = "${aws_api_gateway_rest_api.url_provider_api.execution_arn}/*/*"
+}
+
+# Deploy the API
+resource "aws_api_gateway_deployment" "api_deployment" {
+  depends_on   = [aws_api_gateway_integration.lambda_integration]
+  rest_api_id  = aws_api_gateway_rest_api.url_provider_api.id
+  # nest all resources/endpoints under /test path
+  stage_name   = "test"
+}

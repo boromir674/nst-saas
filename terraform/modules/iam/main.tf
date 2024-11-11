@@ -1,10 +1,12 @@
 # terraform/modules/iam/main.tf
 
-# IAM Role for Lambda Execution
+# IAM Role that can only be assumed by Lambda services
 resource "aws_iam_role" "lambda_execution_role" {
-  name = "LambdaExecutionRole"
+  name = "NSTStorageURLProviderLambdaIAMRole"
+  # Declare Trust Policy: what services can assume this Role
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
+    # Allow Role to be assumed by any Lambda
     Statement = [
       {
         Effect = "Allow",
@@ -17,8 +19,9 @@ resource "aws_iam_role" "lambda_execution_role" {
 
 # IAM Policy for S3 Access by Lambda
 resource "aws_iam_policy" "lambda_s3_access" {
-  name        = "LambdaS3Access"
+  name        = "NSTS3StorageAccessPolicy"
   description = "Policy granting Lambda function access to S3"
+  # Declare Permissions Policy: what actions are allowed on what resources
   policy      = jsonencode({
     Version = "2012-10-17",
     Statement = [
@@ -35,8 +38,9 @@ resource "aws_iam_policy" "lambda_s3_access" {
   })
 }
 
-# Attach the S3 access policy to the Lambda execution role
+# Lambda Role with S3 PutObject/GetObject Access Permissions
 resource "aws_iam_role_policy_attachment" "lambda_s3_policy_attachment" {
+    # Attach the S3 access policy to the Lambda execution role
   role       = aws_iam_role.lambda_execution_role.name
   policy_arn = aws_iam_policy.lambda_s3_access.arn
 }

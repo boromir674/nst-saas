@@ -35,3 +35,11 @@ output "presigned_url_lambda_arn" {
 #   description = "The base URL of the API Gateway for budget check"
 #   value       = module.api_gateway.api_url  # Assumes api_url is defined as an output in the API Gateway module
 # }
+
+
+### Output of API Gateway related resources
+
+output "api_invoke_url" {
+  description = "Base URL for API Gateway"
+  value       = aws_api_gateway_deployment.api_deployment.invoke_url
+}

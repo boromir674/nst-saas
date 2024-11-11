@@ -5,7 +5,7 @@ variable "bucket_name" {
   type        = string
 }
 
-variable "terraform_execution_role" {
-  description = "Name of the IAM role or user for Terraform"
-  type        = string
-}
+# variable "terraform_execution_role" {
+#   description = "Name of the IAM role or user for Terraform"
+#   type        = string
+# }
