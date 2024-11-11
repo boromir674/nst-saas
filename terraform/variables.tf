@@ -1,11 +1,11 @@
 # terraform/variables.tf
 
-### Required to allow local user/role/dev to pass the Lambda execution role ###
-variable "terraform_execution_role" {
-  # Define a variable to pass the IAM user or role name
-  description = "IAM role or user running Terraform with permissions to manage resources"
-  type        = string
-}
+### If missing it is Required to be added to local user/role/dev to pass the Lambda execution role ###
+# variable "terraform_execution_role" {
+#   # Define a variable to pass the IAM user or role name
+#   description = "IAM role or user running Terraform with permissions to manage resources"
+#   type        = string
+# }
 
 
 ### AWS region where resources will be created, by Provider ###
