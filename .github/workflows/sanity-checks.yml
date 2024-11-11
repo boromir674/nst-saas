@@ -17,6 +17,7 @@ jobs:
   test_url_uload:
     runs-on: ubuntu-latest
     env:
+      TF_LOG: INFO
       TF_INPUT: 0  # run terraform in non-interactive mode; never prompt user for input
       TF_IN_AUTOMATION: 1  # adjust tf output to avoid suggesting specific commands to run next
     #   AWS_REGION: ${{ vars.AWS_DEFAULT_REGION }}
