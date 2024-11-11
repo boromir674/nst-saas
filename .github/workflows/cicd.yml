@@ -1,0 +1,49 @@
+# CI/CD Pipeline
+
+# Test -> Build -> Deploy
+
+# Triggers
+on:
+  push:
+    branches:
+      - "main"
+      - "dev"
+      - "ci"
+    # we use release branch for semver/changelog updates and deploying 'rc' tags
+    # thus we filter out events for branch 'release', to NOT trigger
+    # avoid triggering on sem ver bump / changelog update commits
+      - "!release"
+      # [Git Ops]: do not trigger on Branches used only for PR labeling
+      - '!board-n-release-*'
+      - '!board-request-*'
+    tags:
+      - v*
+
+# Note: env context only available as env vars in code, not in 'if' conditions!
+
+jobs:
+  # can retire this Job if all 'if' condition read values from 'vars' for determining Top-Level overrides
+  pipe:
+  # CONFIGURE PIPELINE - to allow git-tracked logic for Jobs if/when to run
+    uses: ./.github/workflows/pipe_config.yml
+    with:
+      ALLOW_LINT_TO_FAIL: true
+
+      ##### OVERRIDE SWITCHES #####
+      # true gurantees Job run, false gurantees Job NOT run
+
+      # OVERRIDE_UNIT_TESTS: false  # shutdown unit-tests
+      # OVERRIDE_LINT: false  # shutdown lint
+      # OVERRIDE_BUILD: false  # prevent build
+      # OVERRIDE_E2E_TESTS: false  # prevent E2E tests
+      # OVERRIDE_DEPLOY: true  # force deployment
+
+      #############################
+
+  ### Automated TESTS ###
+  test:
+    needs: pipe
+    if: always() && ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == 'true' || ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == '' && needs.pipe.result == 'success' ) )
+    uses: ./.github/workflows/sanity-checks.yml
+    with:
+      env_var_file: 'terraform/env_dev.tfvars'
