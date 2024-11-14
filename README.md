@@ -102,3 +102,55 @@ sequenceDiagram
         WebUI->>User: Show "No Budget" Notification
     end
 ```
+
+```mermaid
+flowchart TB
+    %% Client Layer
+    subgraph ClientLayer [Client Layer]
+        User["User (Client)"]
+        WebUI["Web UI (React)"]
+    end
+
+    %% Edge Layer
+    subgraph EdgeLayer [Edge Layer]
+        CDN["CDN (Cloudfront + S3)"]
+        APIGateway["API Gateway"]
+    end
+
+    %% Application Layer
+    subgraph ApplicationLayer [Application Layer]
+        StepFunction["NST Handler (Step Function)"]
+        
+        subgraph LambdaFunctions [Lambdas for NST Workflow]
+            CheckBudgetLambda["Check Budget Lambda"]
+            StartNSTLambda["Start NST Lambda"]
+            MonitorNSTLambda["Monitor NST Lambda"]
+            StopNSTLambda["Stop NST Lambda"]
+        end
+
+        WebAPI["Web API (FastAPI)"]
+        Fargate["Fargate NST Processing"]
+    end
+
+    %% Data Storage Layer
+    subgraph DataStorageLayer [Data Storage Layer]
+        S3["S3 Bucket for Images"]
+        DynamoDB["DynamoDB for Budget Tracking"]
+    end
+
+    %% Connections
+    User -->|Interacts with| WebUI
+    WebUI -->|Requests NST| APIGateway
+    APIGateway -->|Triggers Workflow| StepFunction
+    StepFunction --> CheckBudgetLambda
+    StepFunction --> StartNSTLambda
+    StepFunction --> MonitorNSTLambda
+    StepFunction --> StopNSTLambda
+    StartNSTLambda -->|Launch NST Task| Fargate
+    Fargate -->|Process Images| S3
+    MonitorNSTLambda -->|Check Status| DynamoDB
+    Fargate -->|Store Results| S3
+    S3 -->|Retrieve Results| WebUI
+
+
+```
