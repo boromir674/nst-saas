@@ -23,7 +23,10 @@ environment_vars = {
 ###### MAIN ######
 
 ## 'NST STORAGE' S3 Bucket: cloud storage for 'Content' and 'Style' images
-bucket_name = "nst-bucket-dev"
+storage_bucket_name = "nst-storage-dev"
+
+## 'BUDGET STATE' S3 Bucket: stores the budget state
+# budget_state_bucket_name = "nst-budget-state-bucket-dev"
 
 ## 'URL PROVIDER' Lambda Function: requests a Pre-signed URL for uploading to 'NST STORAGE'
 presigned_url_lambda_package_path  = "../lambda_url_provider/lambda_url_provider.zip" # Path to the ZIP file
@@ -37,8 +40,8 @@ presigned_url_lambda_tags = {
 }
 
 ## 'READ BUDGET' Lambda Function: reads 'State' file from 'Budget Storage' S3 Bucket
-read_budget_state_lambda_function_name = "read_budget_state_dev"
-read_budget_state_lambda_handler       = "budget_check.handler" # Set to match your Lambda entry point
+# read_budget_state_lambda_function_name = "read_budget_state_dev"
+# read_budget_state_lambda_handler       = "budget_check.handler" # Set to match your Lambda entry point
 
 
 
