@@ -4,9 +4,9 @@
 ### Create 'NST Storage' the S3 bucket to store NST images ###
 # 2 Resources of type 'S3 Bucket' and 'Bucket Versioning'
 module "s3_bucket" {
-  source             = "./modules/s3_bucket" # Path to the reusable S3 bucket module
-  bucket_name        = var.storage_bucket_name       # Bucket name passed in as a variable
-  tags = {                                   # Tags to apply to the bucket
+  source      = "./modules/s3_bucket"   # Path to the reusable S3 bucket module
+  bucket_name = var.storage_bucket_name # Bucket name passed in as a variable
+  tags = {                              # Tags to apply to the bucket
     Environment = var.environment_name,
     IaaC        = "Terraform",
     App         = "NST"
@@ -15,8 +15,8 @@ module "s3_bucket" {
 
 ### Create 'Budget State' S3 bucket to store budget state ###
 module "budget_state_bucket" {
-  source             = "./modules/s3_bucket"
-  bucket_name        = var.budget_state_bucket_name
+  source      = "./modules/s3_bucket"
+  bucket_name = var.budget_state_bucket_name
   tags = {
     Environment = var.environment_name,
     IaaC        = "Terraform",
@@ -45,12 +45,12 @@ module "iam" {
 ### Create 'URL Provider' Lambda with above Role to generate pre-signed URLs ###
 # 1 Resource of type 'Lambda Function'
 module "presigned_url_lambda" {
-  source           = "./modules/aws_lambda"
-  function_name    = var.presigned_url_lambda_function_name
-  handler          = var.presigned_url_lambda_handler != "" ? var.presigned_url_lambda_handler : var.default_lambda_handler
+  source        = "./modules/aws_lambda"
+  function_name = var.presigned_url_lambda_function_name
+  handler       = var.presigned_url_lambda_handler != "" ? var.presigned_url_lambda_handler : var.default_lambda_handler
   # Specify Role by arn using Output of above 'Role'
-  role_arn         = module.iam.lambda_execution_role_arn
-  timeout          = 10
+  role_arn            = module.iam.lambda_execution_role_arn
+  timeout             = 10
   lambda_package_path = var.presigned_url_lambda_package_path
 
   environment_vars = merge(
@@ -72,9 +72,9 @@ module "budget_check_lambda" {
   source        = "./modules/aws_lambda"
   function_name = var.read_budget_state_lambda_function_name
   # if no value provided for handler use default fallback
-  handler = var.read_budget_state_lambda_handler != "" ? var.read_budget_state_lambda_handler : var.default_lambda_handler
-  role_arn      = module.iam.budget_check_lambda_role_arn
-  timeout       = 10
+  handler  = var.read_budget_state_lambda_handler != "" ? var.read_budget_state_lambda_handler : var.default_lambda_handler
+  role_arn = module.iam.budget_check_lambda_role_arn
+  timeout  = 10
   # automatically hashes the ZIP file to trigger state updates
   lambda_package_path = "../lambda_functions/read_budget_state/read_budget_state.zip"
   environment_vars = merge(

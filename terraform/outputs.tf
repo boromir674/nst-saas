@@ -9,7 +9,7 @@ output "storage_bucket_name" {
 }
 output "storage_bucket_url" {
   description = "The URL for accessing the 'NST Storage' S3 bucket"
-  value = module.s3_bucket.bucket_name != "" ? "https://${module.s3_bucket.bucket_name}.s3.amazonaws.com" : ""
+  value       = module.s3_bucket.bucket_name != "" ? "https://${module.s3_bucket.bucket_name}.s3.amazonaws.com" : ""
 }
 
 ## 'Budget State' S3 Bucket
@@ -19,7 +19,7 @@ output "budget_state_bucket_name" {
 }
 output "budget_state_bucket_url" {
   description = "The URL for accessing the 'Budget State' S3 bucket"
-  value = module.budget_state_bucket.bucket_name != "" ? "https://${module.budget_state_bucket.bucket_name}.s3.amazonaws.com" : ""
+  value       = module.budget_state_bucket.bucket_name != "" ? "https://${module.budget_state_bucket.bucket_name}.s3.amazonaws.com" : ""
 }
 
 

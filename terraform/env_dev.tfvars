@@ -31,8 +31,8 @@ storage_bucket_name = "nst-storage-dev"
 ## 'URL PROVIDER' Lambda Function: requests a Pre-signed URL for uploading to 'NST STORAGE'
 presigned_url_lambda_package_path  = "../lambda_url_provider/lambda_url_provider.zip" # Path to the ZIP file
 presigned_url_lambda_function_name = "generate_presigned_url_dev"
-presigned_url_lambda_handler       = "generate_presigned_url.handler"                     # Set to the new handler entry point
-presigned_url_url_expiration       = 3600                                                 # Expiration time for the presigned URL in seconds
+presigned_url_lambda_handler       = "generate_presigned_url.handler" # Set to the new handler entry point
+presigned_url_url_expiration       = 3600                             # Expiration time for the presigned URL in seconds
 presigned_url_lambda_tags = {
   Environment = "dev",
   IaaC        = "Terraform",
