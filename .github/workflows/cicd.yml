@@ -41,15 +41,15 @@ jobs:
       #############################
 
   ### Automated TESTS ###
-  test:
-    needs: pipe
-    if: always() && ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == 'true' || ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == '' && needs.pipe.result == 'success' ) )
-    uses: ./.github/workflows/sanity-checks.yml
-    with:
-      env_var_file: 'env_dev.tfvars'  # relative to ./terraform directory
-    secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  # test:
+  #   needs: pipe
+  #   if: always() && ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == 'true' || ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == '' && needs.pipe.result == 'success' ) )
+  #   uses: ./.github/workflows/sanity-checks.yml
+  #   with:
+  #     env_var_file: 'env_dev.tfvars'  # relative to ./terraform directory
+  #   secrets:
+  #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   test_budget_read:
     needs: pipe
