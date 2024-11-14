@@ -1,0 +1,81 @@
+name: 'Run Budget Read Integration Tests'
+on:
+  workflow_call:
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        required: false
+jobs:
+  test_budget_read:
+    runs-on: ubuntu-latest
+    # outputs:
+    env:
+      TF_LOG: INFO
+      TF_INPUT: 0  # run terraform in non-interactive mode; never prompt user for input
+      TF_IN_AUTOMATION: 1  # adjust tf output to avoid suggesting specific commands to run next
+      AWS_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      # GIVEN integrating service(s) are deployed on temporary infrastructure
+      - name: Deploy Test Infrastructure
+        working-directory: terraform
+        run: |
+          terraform init
+          terraform plan -var-file=env_test_budget_lambda.tfvars -out tfplan
+          terraform apply -auto-approve tfplan
+
+      - name: Extract 'Read Budget' Lambda data from TF Output
+        id: lambda_name
+        run: echo LAMBDA_NAME=$(terraform output -raw budget_check_lambda_name) >> $GITHUB_OUTPUT
+
+      - name: Extract 'Budget State' S3 Bucket name from TF Output
+        id: bucket_name
+        run: echo BUCKET_NAME=$(terraform output -raw bucket_name) >> $GITHUB_OUTPUT
+
+      # GIVEN a file representing the 'Current Budget State'
+      - name: Upload State to S3
+        run: |
+          echo '{"budget": 1000}' > budget_state.json
+          aws s3 cp budget_state.json s3://${{ steps.bucket_name.outputs.BUCKET_NAME }}/budget_state.json
+
+      # WHEN we invoke the 'Read Budget' Lambda Function
+      - name: Invoke 'Read Budget' Lambda Function
+        # --invocation-type (string)
+        # Choose from the following options.
+
+        # o RequestResponse (default)  Invoke the function synchronously. Keep
+        #   the connection open until the function returns a response or times
+        #   out.  The  API  response  includes the function response and addi-
+        #   tional data.
+
+        # o Event  Invoke the function asynchronously. Send events  that  fail
+        #   multiple times to the function's dead-letter queue (if one is con-
+        #   figured). The API response only includes a status code.
+
+        # o DryRun  Validate parameter values and verify that the user or role
+        #   has permission to invoke the function.
+
+        run: |
+          aws lambda invoke --function-name ${{ steps.lambda_name.outputs.LAMBDA_NAME }} --invocation-type RequestResponse response.json
+          cat response.json
+
+      # THEN the response body should contain payload corresponding to the 'Current Budget State'
+      - name: ASSERT runtime ramaining Budget matches the Expected value
+        run: |
+          RESPONSE=$(cat response.json)
+          runtime_remaining_budget=$(echo $RESPONSE | jq -r '.budget')
+          echo $RESPONSE
+          echo $runtime_remaining_budget
+          if [ $runtime_remaining_budget -ne 1000 ]; then
+            echo "Budget Read Integration Test Failed"
+            exit 1
+          fi
+
+      # TEARDOWN infrastructure
+      - run: terraform destroy -auto-approve
+        if: always()

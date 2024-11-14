@@ -6,8 +6,6 @@
 module "s3_bucket" {
   source             = "./modules/s3_bucket" # Path to the reusable S3 bucket module
   bucket_name        = var.storage_bucket_name       # Bucket name passed in as a variable
-  enable_public_read = false                 # Set to true to enable public read access
-  enable_versioning  = false                 # Enable versioning for object backups
   tags = {                                   # Tags to apply to the bucket
     Environment = var.environment_name,
     IaaC        = "Terraform",
@@ -19,8 +17,6 @@ module "s3_bucket" {
 module "budget_state_bucket" {
   source             = "./modules/s3_bucket"
   bucket_name        = var.budget_state_bucket_name
-  enable_public_read = false
-  enable_versioning  = false
   tags = {
     Environment = var.environment_name,
     IaaC        = "Terraform",
