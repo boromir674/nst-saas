@@ -1,23 +1,9 @@
 # modules/s3_bucket/variables.tf
 
-# Name of the S3 bucket
+## 'NST Stoage' S3 Bucket
 variable "bucket_name" {
-  description = "The name of the S3 bucket"
+  description = "Name of the 'NST Storage' BucketThe name of the S3 bucket"
   type        = string
-}
-
-# Enable or disable public read access
-variable "enable_public_read" {
-  description = "Set to true to enable public read access to the bucket"
-  type        = bool
-  default     = false  # Default to private access
-}
-
-# Enable or disable versioning
-variable "enable_versioning" {
-  description = "Set to true to enable versioning for the bucket"
-  type        = bool
-  default     = false
 }
 
 # Tags to apply to the bucket
@@ -26,3 +12,7 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+
+## TODO create a factory pattern module that can take care of creating all S3 Buckets (or on-demand subsets) the System requires
+# that module will use this one.
