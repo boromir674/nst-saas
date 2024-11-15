@@ -122,6 +122,10 @@ variable "blahblah" {
 ```
 > Force CI Job to terminate if it has "hanged"
 
+```
+gh workflow list
+```
+Get the `Run ID`
 ```sh
 gh api \
   --method POST \
