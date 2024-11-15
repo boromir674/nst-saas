@@ -23,11 +23,11 @@ on:
 
 jobs:
   # can retire this Job if all 'if' condition read values from 'vars' for determining Top-Level overrides
-  pipe:
-  # CONFIGURE PIPELINE - to allow git-tracked logic for Jobs if/when to run
-    uses: ./.github/workflows/pipe_config.yml
-    with:
-      ALLOW_LINT_TO_FAIL: true
+  # pipe:
+  # # CONFIGURE PIPELINE - to allow git-tracked logic for Jobs if/when to run
+  #   uses: ./.github/workflows/pipe_config.yml
+  #   with:
+  #     ALLOW_LINT_TO_FAIL: true
 
       ##### OVERRIDE SWITCHES #####
       # true gurantees Job run, false gurantees Job NOT run
@@ -52,8 +52,8 @@ jobs:
   #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   test_budget_read:
-    needs: pipe
-    if: always() && ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == 'true' || ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == '' && needs.pipe.result == 'success' ) )
+    # needs: pipe
+    # if: always() && ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == 'true' || ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == '' && needs.pipe.result == 'success' ) )
     uses: ./.github/workflows/test-read-budget.yml
     secrets:
       AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
