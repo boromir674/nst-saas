@@ -47,10 +47,12 @@ jobs:
 
       - name: Extract 'Read Budget' Lambda data from TF Output
         id: lambda_name
+        working-directory: terraform
         run: echo LAMBDA_NAME=$(terraform output -raw budget_check_lambda_name) >> $GITHUB_OUTPUT
 
       - name: Extract 'Budget State' S3 Bucket name from TF Output
         id: bucket_name
+        working-directory: terraform
         run: echo BUCKET_NAME=$(terraform output -raw budget_state_bucket_name) >> $GITHUB_OUTPUT
 
       # If BUCKET_NAME is empty, exit Job with error
