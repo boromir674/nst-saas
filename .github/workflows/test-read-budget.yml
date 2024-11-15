@@ -106,7 +106,9 @@ jobs:
 
       - name: Force Unlock Terraform State, to handle cases such as 'Workflow Cancellation'
         run: terraform force-unlock -force $(terraform state show -id-lock) || true
+        working-directory: terraform
         if: cancelled() || failure()
 
       - run: terraform destroy -auto-approve -lock-timeout=30s
+        working-directory: terraform
         if: always()
