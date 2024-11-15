@@ -70,18 +70,3 @@ output "budget_check_lambda_name" {
 #   description = "Base URL for API Gateway"
 #   value       = aws_api_gateway_deployment.api_deployment.invoke_url
 # }
-
-
-## DEBUG Outputs
-
-# Output the 'URL Provider' Role arn
-output "url_provider_execution_role_arn" {
-  description = "ARN of the 'URL Provider' Lambda execution role"
-  value       = module.iam.url_provider_execution_role_arn
-}
-
-# Output the 'Read Budget State' Role arn
-output "read_budget_execution_role_arn" {
-  description = "ARN of the 'Read Budget State' Lambda execution role"
-  value       = module.iam.read_budget_execution_role_arn
-}
