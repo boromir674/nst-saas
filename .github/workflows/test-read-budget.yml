@@ -118,6 +118,11 @@ jobs:
         working-directory: terraform
         if: cancelled() || failure()
 
+      # Delete budget_state.json from S3 to allow Infra teardown
+      - name: Delete 'Current Budget State' from S3
+        run: aws s3 rm s3://${{ steps.bucket_name.outputs.BUCKET_NAME }}/budget_state.json
+        if: always()
+
       - run: terraform destroy -auto-approve -lock-timeout=30s
         working-directory: terraform
         if: always()
