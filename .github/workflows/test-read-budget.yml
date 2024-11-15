@@ -101,5 +101,10 @@ jobs:
           fi
 
       # TEARDOWN infrastructure
-      - run: terraform destroy -auto-approve
+
+      - name: Force Unlock Terraform State, to handle cases such as 'Workflow Cancellation'
+        run: terraform force-unlock -force $(terraform state show -id-lock) || true
+        if: cancelled() || failure()
+
+      - run: terraform destroy -auto-approve -lock-timeout=30s
         if: always()
