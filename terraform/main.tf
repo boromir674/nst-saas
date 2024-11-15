@@ -33,14 +33,27 @@ module "budget_state_bucket" {
 # }
 
 
-### Create 2 Lambda Roles for 'NST Storage' and 'Budget State' access ###
+### OLD: Create 2 Lambda Roles for 'NST Storage' and 'Budget State' access ###
 # - x2 'IAM Role', 'IAM Policy' and 'Role Policy Attachment' Resources
+# module "iam" {
+#   source = "./modules/iam"
+#   # Provide Bucket Names for IAM Role Policies
+#   bucket_name              = module.s3_bucket.bucket_name
+#   budget_state_bucket_name = module.budget_state_bucket.bucket_name
+# }
+
+
+### Create Lambda Roles for 'NST Storage' and 'Budget State' access on-demand
 module "iam" {
-  source = "./modules/iam"
-  # Provide Bucket Names for IAM Role Policies
-  bucket_name              = module.s3_bucket.bucket_name
+  source = "./modules/nst_roles"
+  # 'URL Provider' Roles Configuration
+  provide_presigned_url_role_name = var.url_provider_role_name  # if empty or skipped the Role Resources are skipped
+  nst_storage_bucket_name        = module.s3_bucket.bucket_name
+  # 'Read Budget State' Roles Configuration
+  read_budget_role_name = var.read_budget_role_name  # if empty or skipped the Role Resources are skipped
   budget_state_bucket_name = module.budget_state_bucket.bucket_name
 }
+
 
 ### Create 'URL Provider' Lambda with above Role to generate pre-signed URLs ###
 # 1 Resource of type 'Lambda Function'
@@ -49,7 +62,8 @@ module "presigned_url_lambda" {
   function_name = var.presigned_url_lambda_function_name
   handler       = var.presigned_url_lambda_handler != "" ? var.presigned_url_lambda_handler : var.default_lambda_handler
   # Specify Role by arn using Output of above 'Role'
-  role_arn            = module.iam.lambda_execution_role_arn
+  # role_arn            = module.iam.lambda_execution_role_arn  # OLD iam module
+  role_arn            = module.iam.url_provider_execution_role_arn
   timeout             = 10
   lambda_package_path = var.presigned_url_lambda_package_path
 
@@ -73,7 +87,7 @@ module "budget_check_lambda" {
   function_name = var.read_budget_state_lambda_function_name
   # if no value provided for handler use default fallback
   handler  = var.read_budget_state_lambda_handler != "" ? var.read_budget_state_lambda_handler : var.default_lambda_handler
-  role_arn = module.iam.budget_check_lambda_role_arn
+  role_arn = module.iam.read_budget_execution_role_arn
   timeout  = 10
   # automatically hashes the ZIP file to trigger state updates
   lambda_package_path = "../lambda_functions/read_budget_state/read_budget_state.zip"

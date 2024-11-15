@@ -16,21 +16,18 @@ variable "aws_region" {
 }
 
 #### Resource: S3 bucket for storing NST images ####
-# This should be unique per environment and specified in `terraform.tfvars`.
-# Also the URL Provider lambda interacts with this S3 bucket.
 variable "storage_bucket_name" {
   description = "The name of the S3 bucket to store NST images"
   type        = string
   default     = "" # Explicit value passed required to create this Resourcce
 }
-
+#### Resource: S3 bucket for storing the 'Budget State' ####
 variable "budget_state_bucket_name" {
   description = "The name of the S3 bucket to store the Budget State"
   type        = string
   default     = "" # Explicit value passed required to create this Resourcce
 }
 
-#### Resource: URL Provider Lambda ####
 
 # Common Environment variables for Lambda functions
 variable "environment_vars" {
@@ -45,29 +42,49 @@ variable "presigned_url_lambda_function_name" {
   type        = string
   default     = "" # Leave empty default to prevent resource creation
 }
-
 variable "presigned_url_lambda_handler" {
   description = "Handler for the presigned URL Lambda function"
   type        = string
   default     = "" # Leave empty to use the default handler or pass value to override
 }
-
 variable "presigned_url_url_expiration" {
   description = "Expiration time for the presigned URL in seconds"
   type        = number
   default     = 3600 # Default to 1 hour (3600 seconds)
 }
-
 variable "presigned_url_lambda_package_path" {
   description = "Path to the Lambda deployment package (ZIP file) for presigned URL generator"
   type        = string
   default     = ""
 }
-
 variable "presigned_url_lambda_tags" {
   description = "Tags to apply to the presigned URL Lambda function"
   type        = map(string)
   default     = {} # Default to an empty map; define specific values in `terraform.tfvars`
+}
+
+## Resource: 'READ BUDGET' Lambda Function: reads 'State' file from 'Budget Storage' S3 Bucket
+variable "read_budget_state_lambda_function_name" {
+  description = "Name of the Lambda function for reading budget state. If not supplied, then the resource is not created."
+  type        = string
+  default     = "" # Explicit value passed required to create this Resourcce
+}
+variable "read_budget_state_lambda_handler" {
+  description = "Lambda Handler (ie lambda.function) for the read budget state Lambda function to override default 'lambda.handler'"
+  type        = string
+  default     = "" # Leave empty to use the default handler or pass value to override
+}
+
+#### ROLES ####
+variable "url_provider_role_name" {
+  description = "Name of the IAM Role for the 'URL Provider' Lambda function"
+  type        = string
+  default     = "" # To skip creation leave default "" value. IF 'presigned_url_lambda_function_name' is provided then this value MUST be non-empty!
+}
+variable "read_budget_role_name" {
+  description = "Name of the IAM Role for the 'Read Budget State' Lambda function"
+  type        = string
+  default     = "" # To skip creation leave default "" value. IF 'read_budget_state_lambda_function_name' is provided then this value MUST be non-empty!
 }
 
 #### Resource: API Gateway ####
@@ -92,15 +109,3 @@ variable "default_lambda_handler" {
   default     = "lambda.handler"
 }
 
-## 'READ BUDGET' Lambda Function: reads 'State' file from 'Budget Storage' S3 Bucket
-variable "read_budget_state_lambda_function_name" {
-  description = "Name of the Lambda function for reading budget state. If not supplied, then the resource is not created."
-  type        = string
-  default     = "" # Explicit value passed required to create this Resourcce
-}
-
-variable "read_budget_state_lambda_handler" {
-  description = "Lambda Handler (ie lambda.function) for the read budget state Lambda function to override default 'lambda.handler'"
-  type        = string
-  default     = "" # Leave empty to use the default handler or pass value to override
-}

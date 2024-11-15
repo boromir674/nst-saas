@@ -1,5 +1,7 @@
 # modules/s3_bucket/main.tf
-## Declares all S3 Buckets and their configurations ##
+
+# Creates an S3 Bucket with optional Bucket Policy and Versioning
+
 
 # Create S3 Bucket
 # INPUTS:
