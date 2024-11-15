@@ -66,7 +66,7 @@ jobs:
       # GIVEN a file representing the 'Current Budget State'
       - name: Upload State to S3
         run: |
-          echo '{"budget": 1000}' > budget_state.json
+          echo '{"budget_status": "ok", "remaining_budget": 1000}' > budget_state.json
           aws s3 cp budget_state.json s3://${{ steps.bucket_name.outputs.BUCKET_NAME }}/budget_state.json
 
       # WHEN we invoke the 'Read Budget' Lambda Function
@@ -91,13 +91,22 @@ jobs:
           cat response.json
 
       # THEN the response body should contain payload corresponding to the 'Current Budget State'
-      - name: ASSERT runtime ramaining Budget matches the Expected value
+      - name: ASSERT runtime remaining Budget matches the Expected value
         run: |
           RESPONSE=$(cat response.json)
-          runtime_remaining_budget=$(echo $RESPONSE | jq -r '.budget')
+          runtime_remaining_budget=$(echo $RESPONSE | jq -r '.remaining_budget')
           echo $RESPONSE
           echo $runtime_remaining_budget
           if [ $runtime_remaining_budget -ne 1000 ]; then
+            echo "Budget Read Integration Test Failed"
+            exit 1
+          fi
+      - name: ASSERT runtime 'budget_status' is 'ok'
+        run: |
+          RESPONSE=$(cat response.json)
+          runtime_budget_status=$(echo $RESPONSE | jq -r '.budget_status')
+          echo $runtime_budget_status
+          if [ $runtime_budget_status != "ok" ]; then
             echo "Budget Read Integration Test Failed"
             exit 1
           fi
