@@ -123,7 +123,7 @@ variable "blahblah" {
 > Force CI Job to terminate if it has "hanged"
 
 ```
-gh workflow list
+gh workflow view
 ```
 Get the `Run ID`
 ```sh
