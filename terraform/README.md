@@ -106,3 +106,26 @@ After **successfully provisioning** the resources **Output Values** from `output
 ```sh
 terraform destroy --var-file env_dev.tfvars --var-file .env.tfvars
 ```
+
+
+## Dev Notes
+
+> Example `Output` Variable declaration
+
+```terraform
+variable "blahblah" {
+    value = module_top_level_object.instance_name.attribute_name  # example
+    description = "This is text description"
+    sensitive = true (true / false)
+    depends_on = [] for explicit non-trivial dependency specification
+}
+```
+> Force CI Job to terminate if it has "hanged"
+
+```sh
+gh api \
+  --method POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  /repos/boromir674/nst-saas/actions/runs/RUN_ID/force-cancel
+```
