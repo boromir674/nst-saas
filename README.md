@@ -1,31 +1,152 @@
 # Neural Style Transfer - System
 
-## Components
+## High-level Architecture
+> Infrastructure overview
 
-- **CDN**, Cloudfront/S3/Route53
-- **Web UI** (aka Client), written with `React`, built with `Gatsby`, deployed in S3
-- **NST Handler**, possibly deployed in AWS Lambda
-  - Able to check if `nst budget` is depleted or not
-  - nst budget is a certain quota in AWS to prevent charges from increasing too much
-  - assumption is that both AWS Fargate and AWS App Runner provide this functionality
-- **URL Provider**, a Lambda function to generate `Pre-signed URLs with Access Permissions`
-  - generates `Pre-signed URLs with Access Permissions` on invocation
-  - Infrastructure as Code for `AWS Lambda`: see [terraform/modules/aws_lambda](./terraform/modules/aws_lambda/) and [terraform/main.tf](./terraform/main.tf)
-  - [Lambda Function](./lambda_url_provider/) deployed as `ZIP` to minimize cost (no deployment as `Container`, since no OS modifications or complex dependencies are required)
-- **Web API**, written with `Python` and `FastAPI`, deployed in AWS Fargate or AWS App Runner
-  - **REST** or **RPC**
-  - Runs CPU-bound NST algorithm
-- **Image Cloud Storage** for Client File Uploads
-  - Infrastructure as Code for `AWS S3 Bucket` in [terraform/modules/s3_bucket](./terraform/modules/s3_bucket/)
+This Block Diagram visualizes all the AWS Resources involved in the `NST System` and groups them:
+
+- <span style="color:#696;">EDGE</span>: All internet (client) requests, arrive here first
+  - **CDN** acting as Edge (File) Server of the Static Website
+  - **API** acting as Gateway to Client HTTP requests
+- <span style="color:#03a1fc;">APPLICATION</span>: Serverless Compute
+  - **Orchestrator** modeling the App's Logic, with a State Machine, and triggering Lambdas
+  - 5 **Lambda Functions**, (aka serverless) for handling events within the system, with auto-scaling
+  - **NST Service** (Elastic Container Service) running the NST Algorithm, deployed in AWS Fargate
+- <span style="color:#6f03fc;">STORAGE</span>: Website, App File Storage
+  - **NST Storage**, as Bucket in S3, for Images Uploads/Downloads
+  - **Website**, as Bucket in S3, for hosting the (SSR) Static website files (HTML/CSS/JS)
+  - **NST Badget**, as Bucket in S3, for tracking the remaining badget
 
 > Manage Infra via [terraform/main.tf](./terraform/main.tf)
+ 
+```mermaid
+block-beta
+
+columns 5
+
+%% EDGE LAYER - group taking up whole row
+  block:EDGE
+    columns 1
+    CDN["CDN:
+    Cloudfront Distrinution"]
+    API["API:
+    API Gateway"]
+  end
+
+%% APP LAYER - group taking up whole row
+  block:APP:1
+    columns 1
+    block:LAMBDA
+      columns 1
+      read_badget["Read Budget: Lambda"]
+      get_url["Get Upload URL: Lambda"]
+      update_budget["Update Badget: Lambda"]
+      start_nst["Start NST: Lambda"]
+      stop_nst["Stop NST: Lambda"]
+    end
+    step["Orchestrator:
+    Step Function"]
+    nst["NST:
+    Elastic Container Service"]
+  end
+
+%% V1
+%% EDGE --> APP
+%% APP --> EDGE
+%% V2
+%% leftright<["&nbsp;&nbsp;&nbsp;"]>(x, right)
+
+%% STORAGE LAYER - group taking up whole row
+  block:S3:1
+    columns 1
+    storage["NST Storage:
+    S3 Bucket"]
+    state["Budget State:
+    S3 Bucket"]
+    web["Website:
+    S3 Bucket"]
+  end
+
+style EDGE fill:#696;
+style APP fill:#03a1fc;
+style S3 fill:#6f03fc;
+
+```
 
 ## Actors
 
 - `User`: an anonymous user
 
+## User Flows
 
-## User flow
+### Access Web Client
+
+> Visit nst-art.org in your browser.
+
+```mermaid
+flowchart LR
+
+Browser@{ shape: circle, label: "Browser" }
+Browser -. "`1: visit nst-art.org`".-> DNS
+DNS -. 2: IP.-> Browser
+
+Browser == 3: IP==> CDN
+
+subgraph EdgeServer [Edge Server, close to User]
+serve_cache[["Serve Files from cache"]]
+update_cache[["Update Edge cache"]]
+cache_hit{"cache hit"?}
+end
+
+CDN --> cache_hit
+cache_hit -- yes--> serve_cache
+
+cache_hit -- no --> s3_bucket
+
+s3_bucket@{ shape: lin-cyl, label: "Website: S3 Bucket" }
+%% s3_bucket[["Website: S3 Bucket"]]
+
+s3_bucket -- Get Static Files--> update_cache
+update_cache --> serve_cache
+serve_cache == Static HTML/CSS/JS==> Browser
+```
+### Upload Image
+```mermaid
+flowchart TB
+
+    WebUI(("Web Client/UI (React)"))
+
+    %% Edge Layer
+    subgraph EdgeLayer [Edge Layer, Serverless]
+        APIGateway["API Gateway"]
+    end
+
+    %% Application Layer
+    subgraph ApplicationLayer [Application Layer]
+
+        subgraph LambdaFunctions [Serverless Lambda]
+            ProvideURL["Provide Upload URL"]
+        end
+
+    end
+
+    %% Data Storage Layer
+    subgraph DataStorageLayer [Data Storage Layer]
+        S3["NST Storage: S3 Bucket"]
+    end
+
+    %% Connections
+    WebUI -->|1: Request Upload URL| APIGateway
+    APIGateway --> ProvideURL
+    ProvideURL --> S3
+    APIGateway --> WebUI
+    S3 -->|Pre-signed Upload URL| ProvideURL
+    ProvideURL --> APIGateway
+    WebUI -->|2: Upload Image| S3
+
+```
+
+### End to End 
 
 1. User Visits website at nst-art.org and CDN serves static html/js/css site
 2. Web UI is rendered in browser
@@ -33,23 +154,6 @@
 4. User Loads `Style` Image
 5. User Selects `Algorithm parameters`
 6. User Clicks the `Run` button
-   1. A message is dispatched to **NST Handler** and decides
-      1. If `nst budget` is not depleted
-         2. Then it sends a response to Web UI so `UI update A` should indicate to User that NST algo is triggering
-         3. Should call the Web API to actually run the CPU-bound NST Algo
-            1. File upload should happen (either from Client or Lambda, not sure yet)
-         4. The Web API (or possibly another components?) should be able to stream algo updates to the Client
-         5. UI should then be able to update its content on regular step/interval with NST algo updates (ie number of epoch)
-   2. If `nst budget` is depleted
-      1. Then **NST Handler** sends a response to Web UI, so that `UI update B` should indicate to User that "unfortunately there is no budget"
-
-
-> If NST was triggered and the algo was started then:
-
-Then we would like ideally to stream an image to the Client too. NST stands for Neural Style Transfer, so we want to stream the so-called `Generated Image`. We can try websockets.
-
-If streaming is not possible or for a quicker PoC we should just "send" the image once, when the algorithm epochs stop.
-
 
 ```mermaid
 sequenceDiagram
@@ -105,11 +209,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart TB
-    %% Client Layer
-    subgraph ClientLayer [Client Layer]
-        User["User (Client)"]
-        WebUI["Web UI (React)"]
-    end
+    WebUI["Web Client/UI (React)"]
 
     %% Edge Layer
     subgraph EdgeLayer [Edge Layer]
@@ -122,33 +222,32 @@ flowchart TB
         StepFunction["NST Handler (Step Function)"]
         
         subgraph LambdaFunctions [Lambdas for NST Workflow]
-            CheckBudgetLambda["Check Budget Lambda"]
+            CheckBudgetLambda["Read Budget Lambda"]
+            UpdateBudgetLambda["Update Budget Lambda"]
             StartNSTLambda["Start NST Lambda"]
-            MonitorNSTLambda["Monitor NST Lambda"]
             StopNSTLambda["Stop NST Lambda"]
         end
+        RequestURL["Request URL Lambda"]
 
-        WebAPI["Web API (FastAPI)"]
         Fargate["Fargate NST Processing"]
     end
 
     %% Data Storage Layer
     subgraph DataStorageLayer [Data Storage Layer]
         S3["S3 Bucket for Images"]
-        DynamoDB["DynamoDB for Budget Tracking"]
+        Budget_state["S3 Bucket for Budget State"]
     end
 
     %% Connections
-    User -->|Interacts with| WebUI
     WebUI -->|Requests NST| APIGateway
     APIGateway -->|Triggers Workflow| StepFunction
+    APIGateway --> RequestURL
+    RequestURL --> S3
     StepFunction --> CheckBudgetLambda
     StepFunction --> StartNSTLambda
-    StepFunction --> MonitorNSTLambda
     StepFunction --> StopNSTLambda
     StartNSTLambda -->|Launch NST Task| Fargate
     Fargate -->|Process Images| S3
-    MonitorNSTLambda -->|Check Status| DynamoDB
     Fargate -->|Store Results| S3
     S3 -->|Retrieve Results| WebUI
 

@@ -12,14 +12,8 @@ The setup provisions
 ```plaintext
 terraform/
 ├── main.tf                      # Core Terraform configuration that references modules
-├── providers.tf                 # AWS provider configuration
 ├── variables.tf                 # Common variable definitions for all environments
 ├── outputs.tf                   # Outputs important resource information after apply
-├── environments/                # Environment-specific variable files
-│   ├── dev/
-│   │   └── terraform.tfvars     # Dev-specific variable values
-│   └── prod/
-│       └── terraform.tfvars     # Prod-specific variable values
 └── modules/                     # Reusable modules for resources
     ├── s3_bucket/               # Module for creating S3 buckets
     │   ├── main.tf
