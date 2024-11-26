@@ -1,39 +1,51 @@
-# environments/dev/terraform.tfvars
+### Development Infrastructure Deployment on AWS
+### Environment: Development
 
-# AWS region for entire infrastructure of dev environment
+# PLAN: terraform plan --var-file env_dev.tfvars --var-file -out tfplan-dev
+# APPLY: terraform plan tfplan-dev
+# DESTROY: terraform destroy --var-file env_dev.tfvars
+
+
+### Shared Variables ###
+
+## AWS region for the entire infrastructure of dev environment
 aws_region = "eu-central-1"
 
-# S3 bucket name for storing NST images in the dev environment
-bucket_name = "nst-bucket-dev"
+# Environment tag to apply to resources
+environment_name = "dev"
 
-# Lambda function details for budget check in the dev environment
-lambda_function_name = "budget_check_dev"
-lambda_handler       = "budget_check.handler"  # Set to match your Lambda entry point
-lambda_runtime       = "python3.11"             # Choose the Lambda runtime for your function
-
-# Environment variables for the Lambda functions
+# Environment variables for all Lambda Functions
 environment_vars = {
   ENV = "dev"
 }
 
 
-# URL Provider: Lambda function details for presigned URL generator in dev environment
+###### MAIN ######
+
+## [2 RESOURCES] 'NST STORAGE' S3 Bucket: cloud storage for 'Content' and 'Style' images
+storage_bucket_name = "nst-storage-dev"
+
+## 'BUDGET STATE' S3 Bucket: stores the budget state
+# budget_state_bucket_name = "nst-budget-state-bucket-dev"
+
+# [1 RESOURCE] 'URL PROVIDER' Lambda Function: requests a Pre-signed URL for uploading to 'NST STORAGE'
 presigned_url_lambda_package_path  = "../lambda_url_provider/lambda_url_provider.zip" # Path to the ZIP file
 presigned_url_lambda_function_name = "generate_presigned_url_dev"
-presigned_url_lambda_handler       = "generate_presigned_url.handler"  # Set to the new handler entry point
-presigned_url_lambda_runtime       = "python3.11"                       # Runtime for the presigned URL Lambda function
-presigned_url_lambda_role_arn      = "arn:aws:iam::123456789012:role/LambdaExecutionRole" # IAM role ARN
-presigned_url_url_expiration       = 3600  # Expiration time for the presigned URL in seconds
-presigned_url_lambda_tags          = {
+presigned_url_lambda_handler       = "generate_presigned_url.handler" # Set to the new handler entry point
+presigned_url_url_expiration       = 3600                             # Expiration time for the presigned URL in seconds
+presigned_url_lambda_tags = {
   Environment = "dev",
   IaaC        = "Terraform",
   App         = "NST"
 }
 
+# [3 RESOURCES] 'URL Provider' Role
+url_provider_role_name = "NSTURLProviderLambdaExecutionRole"
 
-# API Gateway name for the dev environment
+
+## 'READ BUDGET' Lambda Function: reads 'State' file from 'Budget Storage' S3 Bucket
+# read_budget_state_lambda_function_name = "read_budget_state_dev"
+# read_budget_state_lambda_handler       = "budget_check.handler" # Set to match your Lambda entry point
+
+## API Gateway name for the dev environment
 api_name = "nst-api-dev"
-
-
-# Environment tag to apply to resources
-environment_name = "dev"

@@ -12,14 +12,8 @@ The setup provisions
 ```plaintext
 terraform/
 ├── main.tf                      # Core Terraform configuration that references modules
-├── providers.tf                 # AWS provider configuration
 ├── variables.tf                 # Common variable definitions for all environments
 ├── outputs.tf                   # Outputs important resource information after apply
-├── environments/                # Environment-specific variable files
-│   ├── dev/
-│   │   └── terraform.tfvars     # Dev-specific variable values
-│   └── prod/
-│       └── terraform.tfvars     # Prod-specific variable values
 └── modules/                     # Reusable modules for resources
     ├── s3_bucket/               # Module for creating S3 buckets
     │   ├── main.tf
@@ -105,4 +99,31 @@ After **successfully provisioning** the resources **Output Values** from `output
 
 ```sh
 terraform destroy --var-file env_dev.tfvars --var-file .env.tfvars
+```
+
+
+## Dev Notes
+
+> Example `Output` Variable declaration
+
+```terraform
+variable "blahblah" {
+    value = module_top_level_object.instance_name.attribute_name  # example
+    description = "This is text description"
+    sensitive = true (true / false)
+    depends_on = [] for explicit non-trivial dependency specification
+}
+```
+> Force CI Job to terminate if it has "hanged"
+
+```
+gh workflow view
+```
+Get the `Run ID`
+```sh
+gh api \
+  --method POST \
+  -H "Accept: application/vnd.github+json" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  /repos/boromir674/nst-saas/actions/runs/RUN_ID/force-cancel
 ```

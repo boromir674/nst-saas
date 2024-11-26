@@ -2,15 +2,16 @@
 
 output "lambda_arn" {
   description = "ARN of the Lambda function"
-  value       = aws_lambda_function.generate_presigned_url.arn
+  value       = length(aws_lambda_function.generic_function) > 0 ? aws_lambda_function.generic_function[0].arn : ""
+
 }
 
 output "lambda_name" {
   description = "Name of the Lambda function"
-  value       = aws_lambda_function.generate_presigned_url.function_name
+  value       = length(aws_lambda_function.generic_function) > 0 ? aws_lambda_function.generic_function[0].function_name : ""
 }
 
 output "lambda_invoke_arn" {
   description = "ARN to invoke the Lambda function"
-  value       = aws_lambda_function.generate_presigned_url.invoke_arn
+  value       = length(aws_lambda_function.generic_function) > 0 ? aws_lambda_function.generic_function[0].invoke_arn : ""
 }

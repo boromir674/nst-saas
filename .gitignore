@@ -1,5 +1,5 @@
 \.terraform/
-.terraform.lock.hcl
+
 terraform.tfstate
 terraform.tfstate.backup
 terraform/tfplan-dev
@@ -31,3 +31,7 @@ terraform/tfplan-dev
 terraform/tfplan
 lambda_url_provider/lambda_url_provider.zip
 lambda_url_provider/requirements.txt
+lambda_functions/read_budget_state/read_budget_state.zip
+lambda_functions/read_budget_state/requirements.txt
+terraform/plan
+terraform/plan-test

@@ -1,0 +1,84 @@
+name: CI Test for NST Images URL Provisioning on Ephemeral Infrastructure
+on:
+  workflow_call:
+    inputs:
+      env_var_file:
+        description: "Terraform tfvars file for the test environment"
+        required: true
+        type: string
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        required: false
+
+jobs:
+  # Integration Tests against Test Deployment
+  test_url_upload:
+    runs-on: ubuntu-latest
+    env:
+      TF_LOG: INFO
+      TF_INPUT: 0  # run terraform in non-interactive mode; never prompt user for input
+      TF_IN_AUTOMATION: 1  # adjust tf output to avoid suggesting specific commands to run next
+      AWS_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Terraform Init
+        working-directory: terraform
+        run: terraform init
+
+      # TF PLAN
+      - name: Terraform Plan
+        working-directory: terraform
+        run: terraform plan -var-file=${{ inputs.env_var_file }} -out tfplan
+
+      # - run: echo ${{ steps.plan.outputs.stdout }}
+      # - run: echo ${{ steps.plan.outputs.stderr }}
+      # - run: echo ${{ steps.plan.outputs.exitcode }}
+
+      # TF APPLY
+      - name: Terraform Apply
+        working-directory: terraform
+        id: apply
+        # tf apply and "capture" human-readable plan output
+        run: |
+          set -o pipefail  # prevent errors in a pipeline from being masked.
+          terraform apply -auto-approve tfplan | tee apply_output.txt
+
+      # # START TEST SCENARIO
+      # - name: Get Pre-signed URL from API Gateway
+      #   id: get_presigned_url
+      #   run: |
+      #     GATEWAY_URL=$(terraform output -raw api_invoke_url)
+      #     RESPONSE=$(curl -X GET "$GATEWAY_URL/get-presigned-url?object_name=dummy_test_file.txt")
+      #     echo "Response from API Gateway: $RESPONSE"
+      #     echo "RESPONSE=$RESPONSE" >> $GITHUB_ENV
+
+      # # Upload File Using Pre-signed URL
+      # - name: Upload Dummy File to S3
+      #   if: ${{ success() }}
+      #   run: |
+      #     PRESIGNED_URL=$(echo "$RESPONSE" | jq -r '.presigned_url')
+      #     echo "Using Pre-signed URL: $PRESIGNED_URL"
+      #     echo "Sample data" > dummy_test_file.txt
+      #     curl -X PUT -T "dummy_test_file.txt" "$PRESIGNED_URL"
+
+      # # ASSERT: Verify File Upload in S3
+      # - name: Verify File Upload in S3
+      #   if: ${{ success() }}
+      #   run: |
+      #     BUCKET_NAME=$(terraform output -raw bucket_name)
+      #     aws s3 ls s3://$BUCKET_NAME/dummy_test_file.txt || exit 1
+
+      # TEARDOWN: Terraform Destroy (Cleanup)
+      - name: Terraform Destroy
+        if: always()
+        working-directory: terraform
+        run: |
+          terraform destroy -auto-approve -var-file=${{ inputs.env_var_file }}

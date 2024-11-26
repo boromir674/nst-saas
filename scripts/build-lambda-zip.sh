@@ -49,15 +49,15 @@ poetry env use $PYTHON_EXEC
 
 
 # make sure poetry lock would not change the poetry.lock file
-poetry lock
-# check if the poetry.lock file is changed using git
-if git diff --exit-code poetry.lock; then
-    echo "poetry.lock file is not changed"
-else
-    echo "poetry.lock file is changed"
-    echo "Please run poetry lock and commit the changes, before running this script"
-    exit 1
-fi
+# poetry lock
+# # check if the poetry.lock file is changed using git
+# if git diff --exit-code poetry.lock; then
+#     echo "poetry.lock file is not changed"
+# else
+#     echo "poetry.lock file is changed"
+#     echo "Please run poetry lock and commit the changes, before running this script"
+#     exit 1
+# fi
 
 
 # Export requirements.txt

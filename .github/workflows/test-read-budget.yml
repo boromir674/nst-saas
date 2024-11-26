@@ -1,0 +1,128 @@
+name: 'Run Budget Read Integration Tests'
+on:
+  workflow_call:
+    secrets:
+      AWS_ACCESS_KEY_ID:
+        required: false
+      AWS_SECRET_ACCESS_KEY:
+        required: false
+jobs:
+  test_budget_read:
+    runs-on: ubuntu-latest
+    # outputs:
+    env:
+      TF_LOG: INFO
+      TF_INPUT: 0  # run terraform in non-interactive mode; never prompt user for input
+      TF_IN_AUTOMATION: 1  # adjust tf output to avoid suggesting specific commands to run next
+      AWS_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Build Dependencies
+        run: python -m pip install poetry
+
+      # GIVEN a Lambda Function handler code that reads the 'Current Budget State'
+      - name: Package Function into Deployable ZIP
+        env:
+          ZIP_SCRIPT: ./scripts/build-lambda-zip.sh
+        run: |
+          chmod +x ${ZIP_SCRIPT}
+          ${ZIP_SCRIPT} -r ./lambda_functions/read_budget_state/ -p python3.11 -h read_budget_state.py
+
+      # GIVEN integrating service(s) are deployed on temporary infrastructure
+      - name: Deploy Test Infrastructure
+        working-directory: terraform
+        run: |
+          terraform init
+          terraform plan -var-file=env_test_budget_lambda.tfvars -out tfplan
+          terraform apply -auto-approve tfplan
+
+      - name: Extract 'Read Budget' Lambda data from TF Output
+        id: lambda_name
+        working-directory: terraform
+        run: echo LAMBDA_NAME=$(terraform output -raw budget_check_lambda_name) >> $GITHUB_OUTPUT
+
+      - name: Extract 'Budget State' S3 Bucket name from TF Output
+        id: bucket_name
+        working-directory: terraform
+        run: echo BUCKET_NAME=$(terraform output -raw budget_state_bucket_name) >> $GITHUB_OUTPUT
+
+      # If BUCKET_NAME is empty, exit Job with error
+      - name: Check if BUCKET_NAME is empty
+        run: |
+          if [ -z "${{ steps.bucket_name.outputs.BUCKET_NAME }}" ]; then
+            echo "BUCKET_NAME is empty"
+            exit 1
+          fi
+
+      # GIVEN a file representing the 'Current Budget State'
+      - name: Upload State to S3
+        run: |
+          echo '{"budget_status": "ok", "remaining_budget": 1000}' > budget_state.json
+          aws s3 cp budget_state.json s3://${{ steps.bucket_name.outputs.BUCKET_NAME }}/budget_state.json
+
+      # WHEN we invoke the 'Read Budget' Lambda Function
+      - name: Invoke 'Read Budget' Lambda Function
+        # --invocation-type (string)
+        # Choose from the following options.
+
+        # o RequestResponse (default)  Invoke the function synchronously. Keep
+        #   the connection open until the function returns a response or times
+        #   out.  The  API  response  includes the function response and addi-
+        #   tional data.
+
+        # o Event  Invoke the function asynchronously. Send events  that  fail
+        #   multiple times to the function's dead-letter queue (if one is con-
+        #   figured). The API response only includes a status code.
+
+        # o DryRun  Validate parameter values and verify that the user or role
+        #   has permission to invoke the function.
+
+        run: |
+          aws lambda invoke --function-name ${{ steps.lambda_name.outputs.LAMBDA_NAME }} --invocation-type RequestResponse response.json
+          cat response.json
+
+      # THEN the response body should contain payload corresponding to the 'Current Budget State'
+      - name: ASSERT runtime remaining Budget matches the Expected value
+        run: |
+          RESPONSE=$(cat response.json)
+          runtime_remaining_budget=$(echo $RESPONSE | jq -r '.remaining_budget')
+          echo $RESPONSE
+          echo $runtime_remaining_budget
+          if [ $runtime_remaining_budget -ne 1000 ]; then
+            echo "Budget Read Integration Test Failed"
+            exit 1
+          fi
+      - name: ASSERT runtime 'budget_status' is 'ok'
+        run: |
+          RESPONSE=$(cat response.json)
+          runtime_budget_status=$(echo $RESPONSE | jq -r '.budget_status')
+          echo $runtime_budget_status
+          if [ $runtime_budget_status != "ok" ]; then
+            echo "Budget Read Integration Test Failed"
+            exit 1
+          fi
+
+      # TEARDOWN infrastructure
+
+      - name: Force Unlock Terraform State, to handle cases such as 'Workflow Cancellation'
+        run: terraform force-unlock -force $(terraform state show -id-lock) || true
+        working-directory: terraform
+        if: cancelled() || failure()
+
+      # Delete budget_state.json from S3 to allow Infra teardown
+      - name: Delete 'Current Budget State' from S3
+        run: aws s3 rm s3://${{ steps.bucket_name.outputs.BUCKET_NAME }}/budget_state.json
+        if: always()
+
+      - run: terraform destroy -auto-approve -lock-timeout=30s
+        working-directory: terraform
+        if: always()

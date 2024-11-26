@@ -1,0 +1,79 @@
+name: 'Configure Pipeline'
+on:
+  workflow_call:
+    inputs:
+    # TOP LEVEL Overrides
+      OVERRIDE_UNIT_TESTS:
+        description: 'Unit-Tests Job Override'
+        required: false
+        type: string
+      OVERRIDE_LINT:
+        description: 'Lint Job Override'
+        required: false
+        type: string
+      OVERRIDE_BUILD:
+        description: 'Build Job Override'
+        required: false
+        type: string
+      OVERRIDE_E2E_TESTS:
+        description: 'E2E-Tests Job Override'
+        required: false
+        type: string
+      OVERRIDE_DEPLOY:
+        description: 'Deploy Job Override'
+        required: false
+        type: string
+
+    # Other Configurations
+      ALLOW_LINT_TO_FAIL:
+        description: 'Allow Lint Job to fail'
+        required: false
+        type: boolean
+
+    outputs:
+    # TOP LEVEL OVERRIDES: possible values are ['true', 'false', '']
+      OVERRIDE_UNIT_TESTS:
+        description: "Top-level Unit-Test Job Override. Set to true to gurantee trigger. Set to false to guarantee NOT trigger. By default 'tigger if previous Jobs are green'"
+        value: ${{ jobs.configure.outputs.OVERRIDE_UNIT_TESTS }}
+      OVERRIDE_LINT:
+        description: "Top-level Lint Job Override. Set to true to gurantee trigger. Set to false to guarantee NOT trigger. By default 'tigger if previous Jobs are green'"
+        value: ${{ jobs.configure.outputs.OVERRIDE_LINT }}
+      OVERRIDE_BUILD:
+        description: "Top-level Build Job Override. Set to true to gurantee trigger. Set to false to guarantee NOT trigger. By default 'tigger if previous Jobs are green'"
+        value: ${{ jobs.configure.outputs.OVERRIDE_BUILD }}
+      OVERRIDE_E2E_TESTS:
+        description: "Top-level E2E-Tests Job Override. Set to true to gurantee trigger. Set to false to guarantee NOT trigger. By default 'tigger if previous Jobs are green'"
+        value: ${{ jobs.configure.outputs.OVERRIDE_E2E_TESTS }}
+      OVERRIDE_DEPLOY:
+        description: "Top-level Deploy Job Override. Set to true to gurantee trigger. Set to false to guarantee NOT trigger. By default 'tigger if previous Jobs are green'"
+        value: ${{ jobs.configure.outputs.OVERRIDE_DEPLOY }}
+    # Allow Lint QA Job to fail
+      ALLOW_LINT_TO_FAIL:
+        description: "Allow Lint Job to fail. Set to true to allow Lint Job to fail without failing the entire pipeline. Set to false to fail the entire pipeline if Lint Job fails. By default 'true'"
+        value: ${{ jobs.configure.outputs.ALLOW_LINT_TO_FAIL }}
+
+      # CONFIG:
+      #   value: ${{ toJson(jobs.configure.outputs) }}
+
+jobs:
+  configure:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configure Pipeline
+        id: set_pipe_config
+        # Output the environment variables to the $GITHUB_OUTPUT file
+        run: |
+          echo OVERRIDE_UNIT_TESTS="${{ vars.OVERRIDE_UNIT_TESTS || inputs.OVERRIDE_UNIT_TESTS }}" >> $GITHUB_OUTPUT
+          echo OVERRIDE_LINT="${{ vars.OVERRIDE_LINT || inputs.OVERRIDE_LINT }}" >> $GITHUB_OUTPUT
+          echo ALLOW_LINT_TO_FAIL="${{ vars.ALLOW_LINT_TO_FAIL || inputs.ALLOW_LINT_TO_FAIL }}" >> $GITHUB_OUTPUT
+          echo OVERRIDE_BUILD="${{ vars.OVERRIDE_BUILD || inputs.OVERRIDE_BUILD }}" >> $GITHUB_OUTPUT
+          echo OVERRIDE_E2E_TESTS="${{ vars.OVERRIDE_E2E_TESTS || inputs.OVERRIDE_E2E_TESTS }}" >> $GITHUB_OUTPUT
+          echo OVERRIDE_DEPLOY="${{ vars.OVERRIDE_DEPLOY || inputs.OVERRIDE_DEPLOY }}" >> $GITHUB_OUTPUT
+    outputs:
+      # Output Top Level overides
+      OVERRIDE_UNIT_TESTS: ${{ steps.set_pipe_config.outputs.OVERRIDE_UNIT_TESTS }}
+      OVERRIDE_LINT: ${{ steps.set_pipe_config.outputs.OVERRIDE_LINT }}
+      ALLOW_LINT_TO_FAIL: ${{ steps.set_pipe_config.outputs.ALLOW_LINT_TO_FAIL }}
+      OVERRIDE_BUILD: ${{ steps.set_pipe_config.outputs.OVERRIDE_BUILD }}
+      OVERRIDE_E2E_TESTS: ${{ steps.set_pipe_config.outputs.OVERRIDE_E2E_TESTS }}
+      OVERRIDE_DEPLOY: ${{ steps.set_pipe_config.outputs.OVERRIDE_DEPLOY }}
