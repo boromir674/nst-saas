@@ -1,4 +1,4 @@
-# Thin-wrapper configurable configurable entrypoint to create IAM Policy resources on-demand
+# Thin-wrapper arround aws_iam_policy to create IAM Policy resources
 
 ## Variables
 variable "policy_name" {

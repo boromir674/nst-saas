@@ -2,6 +2,7 @@
 
 
 ### ROLE for allowing 'URL Provider' Lambda to request Pre-signed URLs from 'NST Storage' S3 ###
+# Creates 3 Resources, if provide_presigned_url_role_name is given: 'IAM Role', 'IAM Policy' and 'Role Policy Attachment'
 # 'Trust Policy' as IAM Role assumable by Lambda services
 module "provide_presigned_url_role" {
   source = "../../modules/iam_role"
@@ -42,6 +43,7 @@ resource "aws_iam_role_policy_attachment" "lambda_budget_s3_read_policy_attachme
 
 
 ### ROLE for allowing 'Read Budget' Lambda to read from 'State' S3 ###
+# Creates 3 Resources, if read_budget_role_name is given: 'IAM Role', 'IAM Policy' and 'Role Policy Attachment'
 # 'Trust Policy' as IAM Role assumable by Lambda services
 module "read_budget_role" {
   source = "../../modules/iam_role"
@@ -79,6 +81,8 @@ resource "aws_iam_role_policy_attachment" "read_budget_lambda_state_s3_read_poli
   policy_arn = module.allow_read_budget_s3_policy[0].policy_arn
 }
 
+
+### SNIPPETS
 # TODO reduce scope to input Lambda instead of any lambda service
         # Condition = {
         #   "StringEquals": {
