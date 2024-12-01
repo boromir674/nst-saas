@@ -39,6 +39,7 @@ module "allow_github_actions_policy" {
         "s3:DeleteBucket",
         "lambda:CreateFunction",
         "lambda:DeleteFunction",
+        "iam:GetRole",
         "iam:CreateRole",
         "iam:DeleteRole",
       ],
