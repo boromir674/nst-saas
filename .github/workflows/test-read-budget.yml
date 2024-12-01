@@ -1,13 +1,12 @@
 name: 'Run Budget Read Integration Tests'
 on:
   workflow_call:
-    secrets:
-      AWS_ACCESS_KEY_ID:
-        required: false
-      AWS_SECRET_ACCESS_KEY:
-        required: false
+
 jobs:
   test_budget_read:
+    permissions:
+      id-token: write   # This is required for requesting the JWT
+      contents: read    # This is required for actions/checkout
     runs-on: ubuntu-latest
     # outputs:
     env:
@@ -15,8 +14,6 @@ jobs:
       TF_INPUT: 0  # run terraform in non-interactive mode; never prompt user for input
       TF_IN_AUTOMATION: 1  # adjust tf output to avoid suggesting specific commands to run next
       AWS_REGION: ${{ vars.AWS_DEFAULT_REGION }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -38,6 +35,13 @@ jobs:
           ${ZIP_SCRIPT} -r ./lambda_functions/read_budget_state/ -p python3.11 -h read_budget_state.py
 
       # GIVEN integrating service(s) are deployed on temporary infrastructure
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          audience: sts.amazonaws.com
+          aws-region: eu-central-1
+          role-to-assume: arn:aws:iam::383351349304:role/NSTSaaSGithubActionsFederatedRole
+          # Option 2: pull remote state and run `tf output --json | jq -r '.github_actions_role_arn.value'`
       - name: Deploy Test Infrastructure
         working-directory: terraform
         run: |
