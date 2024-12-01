@@ -41,7 +41,6 @@ resource "aws_iam_role_policy_attachment" "lambda_budget_s3_read_policy_attachme
 }
 
 
-
 ### ROLE for allowing 'Read Budget' Lambda to read from 'State' S3 ###
 # Creates 3 Resources, if read_budget_role_name is given: 'IAM Role', 'IAM Policy' and 'Role Policy Attachment'
 # 'Trust Policy' as IAM Role assumable by Lambda services

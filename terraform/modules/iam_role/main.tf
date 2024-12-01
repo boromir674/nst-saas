@@ -13,10 +13,11 @@ variable "trust_policies" {
 description = "List of IAM Policy Statements; one or more Trust Policies."
   type        = list(object({
     Effect    = string  # ie "Allow" or "Deny"
+    # Principal = map(string)  # any map of strings to given type (ie string in this case)
     Principal = object({
       Service = string  # ie "lambda.amazonaws.com"
       # Optional "Federated" key for other services
-      # Federated = string
+      # Federated = optional(string)
     })
     Action    = string  #  ie "sts:AssumeRole"
     # TODO: support Condition! ie to limit which Lambdas can assume this Role
