@@ -39,7 +39,10 @@ module "allow_github_actions_policy" {
         "s3:DeleteBucket",
         "lambda:CreateFunction",
         "lambda:DeleteFunction",
+        # Required Permissions: tf resource 'aws_iam_role'
         "iam:GetRole",
+        "iam:ListRolePolicies",
+        "iam:ListAttachedRolePolicies",
         "iam:CreateRole",
         "iam:DeleteRole",
       ],
