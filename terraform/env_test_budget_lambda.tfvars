@@ -25,7 +25,7 @@ environment_vars = {
 
 ### 'BUDGET STATE' S3 Bucket ###
 ## 2 Resources: S3 Bucket and Versioning
-budget_state_bucket_name = "budget-state-bucket-test"
+# budget_state_bucket_name = "budget-state-bucket-test"
 
 ## 'READ BUDGET' Lambda Function: reads 'State' file from 'Budget Storage' S3 Bucket
 # read_budget_state_lambda_function_name = "read_budget_state_test"
