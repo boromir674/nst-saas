@@ -28,11 +28,11 @@ environment_vars = {
 budget_state_bucket_name = "budget-state-bucket-test"
 
 ## 'READ BUDGET' Lambda Function: reads 'State' file from 'Budget Storage' S3 Bucket
-read_budget_state_lambda_function_name = "read_budget_state_test"
-read_budget_state_lambda_handler       = "read_budget_state.lambda_handler" # Set to match your Lambda Function entry point
+# read_budget_state_lambda_function_name = "read_budget_state_test"
+# read_budget_state_lambda_handler       = "read_budget_state.lambda_handler" # Set to match your Lambda Function entry point
 
 ## IAM Role for 'Read Budget State' Lambda
 ## 3 Resources: IAM Role, IAM Policy and Role Policy Attachment
 
 # if not provided, 'plan' will work, but 'apply' will break, since Lambda requires Role ARN on creation time
-read_budget_role_name = "NSTReadBudgetStateLambdaExecutionRole"
+# read_budget_role_name = "NSTReadBudgetStateLambdaExecutionRole"
