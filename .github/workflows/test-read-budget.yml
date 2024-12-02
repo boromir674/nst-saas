@@ -46,10 +46,10 @@ jobs:
           terraform plan -var-file=env_test_budget_lambda.tfvars -out tfplan
           terraform apply -auto-approve tfplan
 
-      - name: Extract 'Read Budget' Lambda data from TF Output
-        id: lambda_name
-        working-directory: terraform
-        run: echo LAMBDA_NAME=$(terraform output -raw budget_check_lambda_name) >> $GITHUB_OUTPUT
+      # - name: Extract 'Read Budget' Lambda data from TF Output
+      #   id: lambda_name
+      #   working-directory: terraform
+      #   run: echo LAMBDA_NAME=$(terraform output -raw budget_check_lambda_name) >> $GITHUB_OUTPUT
 
       # - name: Extract 'Budget State' S3 Bucket name from TF Output
       #   id: bucket_name
