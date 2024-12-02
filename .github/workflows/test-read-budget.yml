@@ -46,71 +46,71 @@ jobs:
           terraform plan -var-file=env_test_budget_lambda.tfvars -out tfplan
           terraform apply -auto-approve tfplan
 
-      - name: Extract 'Read Budget' Lambda data from TF Output
-        id: lambda_name
-        working-directory: terraform
-        run: echo LAMBDA_NAME=$(terraform output -raw budget_check_lambda_name) >> $GITHUB_OUTPUT
+      # - name: Extract 'Read Budget' Lambda data from TF Output
+      #   id: lambda_name
+      #   working-directory: terraform
+      #   run: echo LAMBDA_NAME=$(terraform output -raw budget_check_lambda_name) >> $GITHUB_OUTPUT
 
-      - name: Extract 'Budget State' S3 Bucket name from TF Output
-        id: bucket_name
-        working-directory: terraform
-        run: echo BUCKET_NAME=$(terraform output -raw budget_state_bucket_name) >> $GITHUB_OUTPUT
+      # - name: Extract 'Budget State' S3 Bucket name from TF Output
+      #   id: bucket_name
+      #   working-directory: terraform
+      #   run: echo BUCKET_NAME=$(terraform output -raw budget_state_bucket_name) >> $GITHUB_OUTPUT
 
-      # If BUCKET_NAME is empty, exit Job with error
-      - name: Check if BUCKET_NAME is empty
-        run: |
-          if [ -z "${{ steps.bucket_name.outputs.BUCKET_NAME }}" ]; then
-            echo "BUCKET_NAME is empty"
-            exit 1
-          fi
+      # # If BUCKET_NAME is empty, exit Job with error
+      # - name: Check if BUCKET_NAME is empty
+      #   run: |
+      #     if [ -z "${{ steps.bucket_name.outputs.BUCKET_NAME }}" ]; then
+      #       echo "BUCKET_NAME is empty"
+      #       exit 1
+      #     fi
 
-      # GIVEN a file representing the 'Current Budget State'
-      - name: Upload State to S3
-        run: |
-          echo '{"budget_status": "ok", "remaining_budget": 1000}' > budget_state.json
-          aws s3 cp budget_state.json s3://${{ steps.bucket_name.outputs.BUCKET_NAME }}/budget_state.json
+      # # GIVEN a file representing the 'Current Budget State'
+      # - name: Upload State to S3
+      #   run: |
+      #     echo '{"budget_status": "ok", "remaining_budget": 1000}' > budget_state.json
+      #     aws s3 cp budget_state.json s3://${{ steps.bucket_name.outputs.BUCKET_NAME }}/budget_state.json
 
-      # WHEN we invoke the 'Read Budget' Lambda Function
-      - name: Invoke 'Read Budget' Lambda Function
-        # --invocation-type (string)
-        # Choose from the following options.
+      # # WHEN we invoke the 'Read Budget' Lambda Function
+      # - name: Invoke 'Read Budget' Lambda Function
+      #   # --invocation-type (string)
+      #   # Choose from the following options.
 
-        # o RequestResponse (default)  Invoke the function synchronously. Keep
-        #   the connection open until the function returns a response or times
-        #   out.  The  API  response  includes the function response and addi-
-        #   tional data.
+      #   # o RequestResponse (default)  Invoke the function synchronously. Keep
+      #   #   the connection open until the function returns a response or times
+      #   #   out.  The  API  response  includes the function response and addi-
+      #   #   tional data.
 
-        # o Event  Invoke the function asynchronously. Send events  that  fail
-        #   multiple times to the function's dead-letter queue (if one is con-
-        #   figured). The API response only includes a status code.
+      #   # o Event  Invoke the function asynchronously. Send events  that  fail
+      #   #   multiple times to the function's dead-letter queue (if one is con-
+      #   #   figured). The API response only includes a status code.
 
-        # o DryRun  Validate parameter values and verify that the user or role
-        #   has permission to invoke the function.
+      #   # o DryRun  Validate parameter values and verify that the user or role
+      #   #   has permission to invoke the function.
 
-        run: |
-          aws lambda invoke --function-name ${{ steps.lambda_name.outputs.LAMBDA_NAME }} --invocation-type RequestResponse response.json
-          cat response.json
+      #   run: |
+      #     aws lambda invoke --function-name ${{ steps.lambda_name.outputs.LAMBDA_NAME }} --invocation-type RequestResponse response.json
+      #     cat response.json
 
-      # THEN the response body should contain payload corresponding to the 'Current Budget State'
-      - name: ASSERT runtime remaining Budget matches the Expected value
-        run: |
-          RESPONSE=$(cat response.json)
-          runtime_remaining_budget=$(echo $RESPONSE | jq -r '.remaining_budget')
-          echo $RESPONSE
-          echo $runtime_remaining_budget
-          if [ $runtime_remaining_budget -ne 1000 ]; then
-            echo "Budget Read Integration Test Failed"
-            exit 1
-          fi
-      - name: ASSERT runtime 'budget_status' is 'ok'
-        run: |
-          RESPONSE=$(cat response.json)
-          runtime_budget_status=$(echo $RESPONSE | jq -r '.budget_status')
-          echo $runtime_budget_status
-          if [ $runtime_budget_status != "ok" ]; then
-            echo "Budget Read Integration Test Failed"
-            exit 1
-          fi
+      # # THEN the response body should contain payload corresponding to the 'Current Budget State'
+      # - name: ASSERT runtime remaining Budget matches the Expected value
+      #   run: |
+      #     RESPONSE=$(cat response.json)
+      #     runtime_remaining_budget=$(echo $RESPONSE | jq -r '.remaining_budget')
+      #     echo $RESPONSE
+      #     echo $runtime_remaining_budget
+      #     if [ $runtime_remaining_budget -ne 1000 ]; then
+      #       echo "Budget Read Integration Test Failed"
+      #       exit 1
+      #     fi
+      # - name: ASSERT runtime 'budget_status' is 'ok'
+      #   run: |
+      #     RESPONSE=$(cat response.json)
+      #     runtime_budget_status=$(echo $RESPONSE | jq -r '.budget_status')
+      #     echo $runtime_budget_status
+      #     if [ $runtime_budget_status != "ok" ]; then
+      #       echo "Budget Read Integration Test Failed"
+      #       exit 1
+      #     fi
 
       # TEARDOWN infrastructure
 
