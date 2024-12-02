@@ -23,27 +23,9 @@ module "budget_state_bucket" {
     App         = "NST"
   }
 }
-# Does state transition on apply but fails on destroy (bucket not empty to delete !)
-# resource "null_resource" "budget_state_init" {
-#   provisioner "local-exec" {
-#     command = "echo '{\"budget\": 1800}' > /tmp/budget_state.json && aws s3 cp /tmp/budget_state.json s3://${module.budget_state_bucket.bucket_name}/"
-#   }
-
-#   depends_on = [module.budget_state_bucket]
-# }
 
 
-### OLD: Create 2 Lambda Roles for 'NST Storage' and 'Budget State' access ###
-# - x2 'IAM Role', 'IAM Policy' and 'Role Policy Attachment' Resources
-# module "iam" {
-#   source = "./modules/iam"
-#   # Provide Bucket Names for IAM Role Policies
-#   bucket_name              = module.s3_bucket.bucket_name
-#   budget_state_bucket_name = module.budget_state_bucket.bucket_name
-# }
-
-
-### Create Lambda Roles for 'NST Storage' and 'Budget State' access on-demand
+### Create Lambda Roles and attach Policies for 'NST Storage' and 'Budget State' access on-demand
 module "iam" {
   source = "./modules/nst_roles"
   # 'URL Provider' Roles Configuration
