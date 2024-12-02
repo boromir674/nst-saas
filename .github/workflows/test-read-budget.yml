@@ -51,28 +51,28 @@ jobs:
         working-directory: terraform
         run: echo LAMBDA_NAME=$(terraform output -raw budget_check_lambda_name) >> $GITHUB_OUTPUT
 
-      # - name: Extract 'Budget State' S3 Bucket name from TF Output
-      #   id: bucket_name
-      #   working-directory: terraform
-      #   run: echo BUCKET_NAME=$(terraform output -raw budget_state_bucket_name) >> $GITHUB_OUTPUT
+      - name: Extract 'Budget State' S3 Bucket name from TF Output
+        id: bucket_name
+        working-directory: terraform
+        run: echo BUCKET_NAME=$(terraform output -raw budget_state_bucket_name) >> $GITHUB_OUTPUT
 
       # If BUCKET_NAME is empty, exit Job with error
-      # - name: Check if BUCKET_NAME is empty
-      #   run: |
-      #     if [ -z "${{ steps.bucket_name.outputs.BUCKET_NAME }}" ]; then
-      #       echo "BUCKET_NAME is empty"
-      #       exit 1
-      #     fi
+      - name: Check if BUCKET_NAME is empty
+        run: |
+          if [ -z "${{ steps.bucket_name.outputs.BUCKET_NAME }}" ]; then
+            echo "BUCKET_NAME is empty"
+            exit 1
+          fi
 
       # GIVEN a file representing the 'Current Budget State'
-      # - name: Upload State to S3
-      #   id: upload_state_file
-      #   env:
-      #     BUDGET_FILE: budget_state.json
-      #   run: |
-      #     echo '{"budget_status": "ok", "remaining_budget": 1000}' > ${{ env.BUDGET_FILE }}
-      #     aws s3 cp budget_state.json s3://${{ steps.bucket_name.outputs.BUCKET_NAME }}/${{ env.BUDGET_FILE }}
-      #     echo "BUDGET_FILE=${{ env.BUDGET_FILE }}" >> $GITHUB_OUTPUT
+      - name: Upload State to S3
+        id: upload_state_file
+        env:
+          BUDGET_FILE: budget_state.json
+        run: |
+          echo '{"budget_status": "ok", "remaining_budget": 1000}' > ${{ env.BUDGET_FILE }}
+          aws s3 cp budget_state.json s3://${{ steps.bucket_name.outputs.BUCKET_NAME }}/${{ env.BUDGET_FILE }}
+          echo "BUDGET_FILE=${{ env.BUDGET_FILE }}" >> $GITHUB_OUTPUT
 
       # WHEN we invoke the 'Read Budget' Lambda Function
       # - name: Invoke 'Read Budget' Lambda Function
