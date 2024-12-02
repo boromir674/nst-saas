@@ -66,9 +66,13 @@ jobs:
 
       # # GIVEN a file representing the 'Current Budget State'
       # - name: Upload State to S3
+      #   id: upload_state_file
+      #   env:
+      #     BUDGET_FILE: budget_state.json
       #   run: |
-      #     echo '{"budget_status": "ok", "remaining_budget": 1000}' > budget_state.json
-      #     aws s3 cp budget_state.json s3://${{ steps.bucket_name.outputs.BUCKET_NAME }}/budget_state.json
+      #     echo '{"budget_status": "ok", "remaining_budget": 1000}' > ${{ env.BUDGET_FILE }}
+      #     aws s3 cp budget_state.json s3://${{ steps.bucket_name.outputs.BUCKET_NAME }}/${{ env.BUDGET_FILE }}
+      #     echo "BUDGET_FILE=${{ env.BUDGET_FILE }}" >> $GITHUB_OUTPUT
 
       # WHEN we invoke the 'Read Budget' Lambda Function
       # - name: Invoke 'Read Budget' Lambda Function
@@ -123,8 +127,8 @@ jobs:
       - name: Delete 'Current Budget State' from S3
         env:
           VALUE_SET_IN_TFVARS: 'budget-state-bucket-test'
-        run: aws s3 rm s3://${{ steps.bucket_name.outputs.BUCKET_NAME || env.VALUE_SET_IN_TFVARS }}/budget_state.json
-        if: always()
+        run: aws s3 rm s3://${{ steps.bucket_name.outputs.BUCKET_NAME || env.VALUE_SET_IN_TFVARS }}/${{ steps.upload_state_file.outputs.BUDGET_FILE }}
+        if: always() && steps.upload_state_file.outputs.BUDGET_FILE != ''
 
       - run: terraform destroy -auto-approve -lock-timeout=30s
         working-directory: terraform
