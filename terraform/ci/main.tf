@@ -35,8 +35,18 @@ module "allow_github_actions_policy" {
     {
       Effect = "Allow",
       Action = [
-        "s3:CreateBucket",
-        "s3:DeleteBucket",
+      "s3:CreateBucket",
+      "s3:DeleteBucket",
+      "s3:PutBucketAcl",       # Required to set ACLs
+      "s3:PutBucketPolicy",    # Required for bucket policies
+      "s3:HeadBucket",         # Required to check bucket existence
+      "s3:GetBucketLocation"   # Required to verify bucket location
+      ],
+      Resource = "arn:aws:s3:::*"  # Allows actions on all buckets
+    },
+    {
+      Effect = "Allow",
+      Action = [
         "lambda:CreateFunction",
         "lambda:DeleteFunction",
         # Required Permissions: tf resource 'aws_iam_role'
@@ -47,7 +57,14 @@ module "allow_github_actions_policy" {
         "iam:DeleteRole",
       ],
       Resource = "*"
-    }
+    },
+  {
+    Effect = "Allow",
+    Action = [
+      "s3:ListAllMyBuckets"    # Lists all buckets for Terraform validation
+    ],
+    Resource = "*"
+  }
   ]
 }
 
