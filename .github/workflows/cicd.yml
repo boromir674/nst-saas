@@ -19,28 +19,16 @@ on:
     tags:
       - v*
 
-# Note: env context only available as env vars in code, not in 'if' conditions!
-
+# Note: env context only available as env vars inside 'run' blocks (ie bash script), not in 'if' (condition) blocks!
+permissions:
+  id-token: write   # This is required for requesting the JWT
+  contents: read    # This is required for actions/checkout
 jobs:
-  # can retire this Job if all 'if' condition read values from 'vars' for determining Top-Level overrides
-  # pipe:
-  # # CONFIGURE PIPELINE - to allow git-tracked logic for Jobs if/when to run
-  #   uses: ./.github/workflows/pipe_config.yml
-  #   with:
-  #     ALLOW_LINT_TO_FAIL: true
-
-      ##### OVERRIDE SWITCHES #####
-      # true gurantees Job run, false gurantees Job NOT run
-
-      # OVERRIDE_UNIT_TESTS: false  # shutdown unit-tests
-      # OVERRIDE_LINT: false  # shutdown lint
-      # OVERRIDE_BUILD: false  # prevent build
-      # OVERRIDE_E2E_TESTS: false  # prevent E2E tests
-      # OVERRIDE_DEPLOY: true  # force deployment
-
-      #############################
-
   ### Automated TESTS ###
+  ci:
+    # if: always() && ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == 'true' || ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == '' && needs.pipe.result == 'success' ) )
+    uses: ./.github/workflows/test-read-budget.yml
+
   # test:
   #   needs: pipe
   #   if: always() && ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == 'true' || ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == '' && needs.pipe.result == 'success' ) )
@@ -50,11 +38,3 @@ jobs:
   #   secrets:
   #     AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   #     AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-
-  test_budget_read:
-    # needs: pipe
-    # if: always() && ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == 'true' || ( needs.pipe.outputs.OVERRIDE_UNIT_TESTS == '' && needs.pipe.result == 'success' ) )
-    uses: ./.github/workflows/test-read-budget.yml
-    secrets:
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}

@@ -3,6 +3,7 @@
 terraform.tfstate
 terraform.tfstate.backup
 terraform/tfplan-dev
+tfplan*
 
 terraform/.env.tfvars
 
@@ -35,3 +36,8 @@ lambda_functions/read_budget_state/read_budget_state.zip
 lambda_functions/read_budget_state/requirements.txt
 terraform/plan
 terraform/plan-test
+
+env/
+
+requirements.txt
+notes.md

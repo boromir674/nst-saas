@@ -1,4 +1,4 @@
-# Thin-wrapper configurable entrypoint to create IAM Role resources on-demand
+# Thin-wrapper arround aws_iam_role to create  IAM Role resources
 
 ## Variables
 variable "role_name" {
@@ -13,11 +13,19 @@ variable "trust_policies" {
 description = "List of IAM Policy Statements; one or more Trust Policies."
   type        = list(object({
     Effect    = string  # ie "Allow" or "Deny"
+    # Principal = map(string)  # any map of strings to given type (ie string in this case)
     Principal = object({
       Service = string  # ie "lambda.amazonaws.com"
+      # Optional "Federated" key for other services
+      # Federated = optional(string)
     })
     Action    = string  #  ie "sts:AssumeRole"
     # TODO: support Condition! ie to limit which Lambdas can assume this Role
+    # Condition = object({
+    #   StringEquals = object({
+    #     "sts:ExternalId" = string
+    #   })
+    # })
   }))
 }
 
