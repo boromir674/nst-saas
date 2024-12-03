@@ -32,18 +32,31 @@ module "allow_github_actions_policy" {
   policy_name        = "GithubActionsNSTSaaSAccessPolicy"
   policy_description = var.allow_github_actions_policy_description
   policy_statements = [
-    {
-      Effect = "Allow",
-      Action = [
-      "s3:CreateBucket",
-      "s3:DeleteBucket",
-      "s3:PutBucketAcl",       # Required to set ACLs
-      "s3:PutBucketPolicy",    # Required for bucket policies
-      "s3:HeadBucket",         # Required to check bucket existence
-      "s3:GetBucketLocation"   # Required to verify bucket location
-      ],
-      Resource = "arn:aws:s3:::*"  # Allows actions on all buckets
-    },
+		{
+			Action = [
+				# "s3:CreateBucket",
+				# "s3:DeleteBucket",
+				# "s3:PutBucketAcl",
+				# "s3:PutBucketPolicy",
+				# "s3:GetBucketLocation",
+				# "s3:ListBucketVersions",
+				# "s3:GetBucketVersioning",
+				# "s3:DeleteObjectVersion",
+				# "s3:GetObjectVersion",
+				# "s3:GetObjectVersionAcl",
+				# "s3:GetObjectVersionAttributes",
+				# "s3:GetObjectVersionForReplication",
+				# "s3:GetObjectVersionTagging",
+				# "s3:GetObjectVersionTorrent",
+				# "s3:PutBucketVersioning",
+				# "s3:PutObjectVersionAcl",
+				# "s3:DeleteObjectVersionTagging",
+				# "s3:PutObjectVersionTagging"
+        "s3:*"
+			],
+			Effect = "Allow",
+			Resource = "*"
+		},
     {
       Effect = "Allow",
       Action = [
@@ -51,20 +64,50 @@ module "allow_github_actions_policy" {
         "lambda:DeleteFunction",
         # Required Permissions: tf resource 'aws_iam_role'
         "iam:GetRole",
+        "iam:PassRole",
         "iam:ListRolePolicies",
         "iam:ListAttachedRolePolicies",
         "iam:CreateRole",
+        "iam:CreatePolicy",
+        "iam:GetPolicy",
+        "iam:ListInstanceProfilesForRole",
+        "iam:GetPolicyVersion",
+        "iam:AttachRolePolicy",
+        # Terraform destroy requires these permissions
         "iam:DeleteRole",
+        "iam:DetachRolePolicy",
+        "iam:DeletePolicy",
+        "iam:ListPolicyVersions",
+        # allow tagging any resource
+        "tag:GetResources",
+        "tag:TagResources",
+        "s3:PutBucketTagging",     # Add this to allow tagging during creation
+        "s3:GetBucketTagging",     # Optional: To read tags
       ],
       Resource = "*"
     },
-  {
-    Effect = "Allow",
-    Action = [
-      "s3:ListAllMyBuckets"    # Lists all buckets for Terraform validation
-    ],
-    Resource = "*"
-  }
+    {
+      Effect = "Allow",
+      Action = [
+        "s3:ListAllMyBuckets" # Lists all buckets for Terraform validation
+      ],
+      Resource = "*"
+    },
+    {
+      Effect = "Allow",
+      Action = [
+        "lambda:TagResource",
+        "lambda:GetFunction",
+        "lambda:ListTags",
+        "lambda:ListVersionsByFunction",
+        "lambda:ListFunctions",
+        "lambda:GetFunctionCodeSigningConfig",
+        # required to Invoke Lambda as part of Test Scenario
+        "lambda:InvokeFunction",
+        "lambda:InvokeAsync"
+      ],
+      Resource: "arn:aws:lambda:eu-central-1:*:function:read_budget_state_test"
+    }
   ]
 }
 
@@ -74,7 +117,7 @@ module "allow_github_actions_policy" {
 # This role assumes IAM already trusts Github Actions (a Github ID Provider is already setup in AWS as Web Identity Provider object)
 # Creates 2 Resources, if github_actions_role_name is given: 'IAM Role', and 'Role Policy Attachment'
 module "iam_github_oidc_role" {
-  source    = "terraform-aws-modules/iam/aws//modules/iam-github-oidc-role"
+  source = "terraform-aws-modules/iam/aws//modules/iam-github-oidc-role"
   create = var.github_actions_role_name != "" ? true : false
 
   name        = var.github_actions_role_name
@@ -99,8 +142,8 @@ module "iam_github_oidc_role" {
   #     # "repo:boromir674/*:ref:refs/heads/*"          # Optional: All repositories in the org
   #   ]
   # }
-  subjects = [  # repo: is automatically prepended
-    "boromir674/nst-saas:ref:refs/heads/*",  # All branches
+  subjects = [                              # repo: is automatically prepended
+    "boromir674/nst-saas:ref:refs/heads/*", # All branches
     # "terraform-aws-modules/terraform-aws-iam:*"
   ]
 
@@ -156,5 +199,5 @@ module "iam_github_oidc_role" {
 output "github_actions_role_arn" {
   description = "ARN of the IAM Role, required to let other resources (ie Lambda) assume this (Trust Policy) Role"
   # value       = length(module.github_actions_role) > 0 ? module.github_actions_role[0].role_arn : ""
-  value       =  module.iam_github_oidc_role.arn
+  value = module.iam_github_oidc_role.arn
 }
