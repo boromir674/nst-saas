@@ -75,10 +75,10 @@ jobs:
           echo "BUDGET_FILE=${{ env.BUDGET_FILE }}" >> $GITHUB_OUTPUT
 
       # WHEN we invoke the 'Read Budget' Lambda Function
-      # - name: Invoke 'Read Budget' Lambda Function
-      #   run: |
-      #     aws lambda invoke --function-name ${{ steps.lambda_name.outputs.LAMBDA_NAME }} --invocation-type RequestResponse response.json
-      #     cat response.json
+      - name: Invoke 'Read Budget' Lambda Function
+        run: |
+          aws lambda invoke --function-name ${{ steps.lambda_name.outputs.LAMBDA_NAME }} --invocation-type RequestResponse response.json
+          cat response.json
       #   # --invocation-type (string)
       #   # Choose from the following options.
 
@@ -96,25 +96,25 @@ jobs:
 
 
       # THEN the response body should contain payload corresponding to the 'Current Budget State'
-      # - name: ASSERT runtime remaining Budget matches the Expected value
-      #   run: |
-      #     RESPONSE=$(cat response.json)
-      #     runtime_remaining_budget=$(echo $RESPONSE | jq -r '.remaining_budget')
-      #     echo $RESPONSE
-      #     echo $runtime_remaining_budget
-      #     if [ $runtime_remaining_budget -ne 1000 ]; then
-      #       echo "Budget Read Integration Test Failed"
-      #       exit 1
-      #     fi
-      # - name: ASSERT runtime 'budget_status' is 'ok'
-      #   run: |
-      #     RESPONSE=$(cat response.json)
-      #     runtime_budget_status=$(echo $RESPONSE | jq -r '.budget_status')
-      #     echo $runtime_budget_status
-      #     if [ $runtime_budget_status != "ok" ]; then
-      #       echo "Budget Read Integration Test Failed"
-      #       exit 1
-      #     fi
+      - name: ASSERT runtime remaining Budget matches the Expected value
+        run: |
+          RESPONSE=$(cat response.json)
+          runtime_remaining_budget=$(echo $RESPONSE | jq -r '.remaining_budget')
+          echo $RESPONSE
+          echo $runtime_remaining_budget
+          if [ $runtime_remaining_budget -ne 1000 ]; then
+            echo "Budget Read Integration Test Failed"
+            exit 1
+          fi
+      - name: ASSERT runtime 'budget_status' is 'ok'
+        run: |
+          RESPONSE=$(cat response.json)
+          runtime_budget_status=$(echo $RESPONSE | jq -r '.budget_status')
+          echo $runtime_budget_status
+          if [ $runtime_budget_status != "ok" ]; then
+            echo "Budget Read Integration Test Failed"
+            exit 1
+          fi
 
       # TEARDOWN infrastructure
 
