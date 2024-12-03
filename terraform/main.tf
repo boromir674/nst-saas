@@ -47,7 +47,8 @@ module "presigned_url_lambda" {
   # role_arn            = module.iam.lambda_execution_role_arn  # OLD iam module
   role_arn            = module.iam.url_provider_execution_role_arn
   timeout             = 10
-  lambda_package_path = var.presigned_url_lambda_package_path
+  # var.presigned_url_lambda_package_path
+  lambda_package_path = "../lambda_functions/lambda_url_provider/lambda_url_provider.zip"
 
   environment_vars = merge(
     var.environment_vars,

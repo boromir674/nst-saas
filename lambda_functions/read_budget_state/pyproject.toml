@@ -5,7 +5,7 @@ description = "Provides Pre-signed URLs with Access Permission"
 authors = ["Konstantinos Lampridis <boromir674@hotmail.com>"]
 readme = "README.md"
 license = "AGPL-3.0-only"
-packages = [{include = "generate_presigned_url.py"}]
+packages = [{include = "read_budget_state.py"}]
 
 [tool.poetry.dependencies]
 python = ">=3.11, <3.13"
