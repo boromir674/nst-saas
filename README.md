@@ -1,5 +1,7 @@
 # Neural Style Transfer - System
 
+![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/boromir674/nst-saas/cicd.yml?branch=main&label=CI%2FCD&link=https%3A%2F%2Fgithub.com%2Fboromir674%2Fnst-saas%2Factions)
+
 ## High-level Architecture
 > Infrastructure overview
 
